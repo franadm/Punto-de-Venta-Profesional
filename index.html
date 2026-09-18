@@ -8,7 +8,7 @@
     <!-- iOS & Android PWA Fullscreen Meta Tags -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="POS Profesional">
+    <meta name="apple-mobile-web-app-title" content="POS">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#000000">
 
@@ -55,9 +55,9 @@
             color: #ffffff;
             -webkit-tap-highlight-color: transparent;
             user-select: none;
-            padding-top: max(env(safe-area-inset-top), 36px); /* Increased safe area top padding */
-            padding-bottom: max(env(safe-area-inset-bottom), 12px); /* Increased bottom safe area padding */
-            overflow: hidden; /* Prevent body scrolling so layout stays locked */
+            padding-top: max(env(safe-area-inset-top), 36px);
+            padding-bottom: max(env(safe-area-inset-bottom), 12px);
+            overflow: hidden;
         }
         .iphone-frame {
             max-width: 440px;
@@ -101,28 +101,31 @@
 
     <div class="iphone-frame w-full flex flex-col justify-between">
         
-        <!-- App Header Title Bar with extra padding to avoid overlap with mobile status bar/notch -->
+        <!-- App Header Title Bar -->
         <header class="px-5 pt-8 pb-3.5 bg-apple-card/95 backdrop-blur-md flex justify-between items-center border-b border-apple-border z-40 shrink-0">
             <div class="flex items-center space-x-3">
                 <div class="w-9 h-9 rounded-xl bg-apple-blue/20 text-apple-blue flex items-center justify-center font-bold text-lg">
                     <i class="fa-solid fa-cash-register"></i>
                 </div>
                 <div>
-                    <h1 id="header-title" class="font-bold text-base leading-tight">Caja Registradora</h1>
+                    <h1 id="header-title" class="font-bold text-base leading-tight">Caja</h1>
                     <p class="text-[11px] text-apple-gray" id="store-subtitle">ARCA • Monotributo C</p>
                 </div>
             </div>
             <div class="flex items-center space-x-2">
-                <button onclick="openScannerModal()" class="w-9 h-9 rounded-full bg-apple-cardAlt text-apple-blue flex items-center justify-center active:scale-95 transition">
+                <button onclick="openScannerModal()" class="w-9 h-9 rounded-full bg-apple-cardAlt text-apple-blue flex items-center justify-center active:scale-95 transition" title="Escanear">
                     <i class="fa-solid fa-barcode text-lg"></i>
                 </button>
-                <button onclick="openQuickAddModal()" class="w-9 h-9 rounded-full bg-apple-blue text-white flex items-center justify-center active:scale-95 transition shadow-lg shadow-apple-blue/30">
+                <button onclick="openQuickVariableModal()" class="w-9 h-9 rounded-full bg-apple-orange text-white flex items-center justify-center active:scale-95 transition shadow-lg shadow-apple-orange/30" title="Ítem Rápido Variable">
+                    <i class="fa-solid fa-bolt"></i>
+                </button>
+                <button onclick="openQuickAddModal()" class="w-9 h-9 rounded-full bg-apple-blue text-white flex items-center justify-center active:scale-95 transition shadow-lg shadow-apple-blue/30" title="Nuevo Producto">
                     <i class="fa-solid fa-plus"></i>
                 </button>
             </div>
         </header>
 
-        <!-- Main Content Area with Dynamic Views (Scrollable Middle Section) -->
+        <!-- Main Content Area with Dynamic Views -->
         <main class="flex-1 overflow-y-auto relative hide-scrollbar pt-4 pb-24" id="main-container">
             
             <!-- VIEW 1: POS / CHECKOUT -->
@@ -133,9 +136,35 @@
                         <input type="text" id="pos-search" oninput="filterPOSProducts()" placeholder="Buscar producto o código..." 
                             class="w-full bg-apple-card text-white pl-10 pr-4 py-3 rounded-xl border border-apple-border text-sm focus:outline-none focus:border-apple-blue">
                     </div>
-                    <button onclick="openScannerModal()" class="bg-apple-card border border-apple-border px-4 rounded-xl text-apple-blue flex items-center justify-center active:scale-95 transition">
-                        <i class="fa-solid fa-camera text-lg"></i>
+                    <button onclick="openQuickVariableModal()" class="bg-apple-card border border-apple-orange/50 px-4 rounded-xl text-apple-orange flex items-center justify-center active:scale-95 transition space-x-1.5" title="Ítem Variable Rápido">
+                        <i class="fa-solid fa-bolt"></i>
+                        <span class="text-xs font-semibold hidden sm:inline">Rápido</span>
                     </button>
+                </div>
+
+                <!-- NEW: Quick $1 Weight/Amount Direct Bar (Panadería, Verdulería, Carnicería) -->
+                <div class="bg-apple-card/60 border border-apple-orange/30 p-3 rounded-2xl space-y-2">
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs font-bold text-apple-orange flex items-center space-x-1.5">
+                            <i class="fa-solid fa-scale-balanced"></i>
+                            <span>Venta Rápida por Importe ($1 / Papelito)</span>
+                        </span>
+                        <span class="text-[10px] text-apple-gray">Toca para cobrar $</span>
+                    </div>
+                    <div class="grid grid-cols-3 gap-2">
+                        <button onclick="openDirectAmountPrompt('Panadería')" class="bg-apple-cardAlt border border-apple-border hover:border-apple-orange py-2 px-1 rounded-xl text-center active:scale-95 transition">
+                            <p class="text-xs font-bold text-white">🥖 Panadería</p>
+                            <p class="text-[10px] text-apple-gray">Precio Libre</p>
+                        </button>
+                        <button onclick="openDirectAmountPrompt('Verdulería')" class="bg-apple-cardAlt border border-apple-border hover:border-apple-orange py-2 px-1 rounded-xl text-center active:scale-95 transition">
+                            <p class="text-xs font-bold text-white">🥬 Verdulería</p>
+                            <p class="text-[10px] text-apple-gray">Precio Libre</p>
+                        </button>
+                        <button onclick="openDirectAmountPrompt('Carnicería')" class="bg-apple-cardAlt border border-apple-border hover:border-apple-orange py-2 px-1 rounded-xl text-center active:scale-95 transition">
+                            <p class="text-xs font-bold text-white">🥩 Carnicería</p>
+                            <p class="text-[10px] text-apple-gray">Precio Libre</p>
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Categories -->
@@ -145,22 +174,24 @@
                     <button onclick="selectCategory('Almacén')" class="cat-pill px-4 py-1.5 rounded-full text-xs font-medium bg-apple-card text-apple-gray border border-apple-border whitespace-nowrap transition">Almacén</button>
                     <button onclick="selectCategory('Limpieza')" class="cat-pill px-4 py-1.5 rounded-full text-xs font-medium bg-apple-card text-apple-gray border border-apple-border whitespace-nowrap transition">Limpieza</button>
                     <button onclick="selectCategory('Snacks')" class="cat-pill px-4 py-1.5 rounded-full text-xs font-medium bg-apple-card text-apple-gray border border-apple-border whitespace-nowrap transition">Snacks</button>
+                    <button onclick="selectCategory('Peso / Varios')" class="cat-pill px-4 py-1.5 rounded-full text-xs font-medium bg-apple-card text-apple-gray border border-apple-border whitespace-nowrap transition">Peso / Varios</button>
                 </div>
 
                 <!-- Product Grid -->
                 <div class="grid grid-cols-2 gap-3" id="pos-product-grid"></div>
 
-                <!-- Floating Cart / Checkout Drawer Trigger -->
-                <div id="cart-drawer-summary" class="bg-apple-card/95 backdrop-blur-md border border-apple-border rounded-2xl p-4 shadow-2xl transition-all my-4">
-                    <div class="flex justify-between items-center mb-3">
+                <!-- Floating Cart / Checkout Drawer Trigger (fijo al fondo, siempre visible al cargar productos) -->
+                <div id="cart-drawer-summary" class="sticky bottom-0 bg-apple-card/95 backdrop-blur-md border border-apple-border rounded-2xl p-4 shadow-2xl transition-all mt-4 z-30">
+                    <div onclick="toggleCartDetails()" class="flex justify-between items-center mb-3 cursor-pointer active:opacity-70">
                         <div class="flex items-center space-x-2">
                             <div class="w-7 h-7 rounded-full bg-apple-blue/20 text-apple-blue flex items-center justify-center text-xs font-bold" id="cart-badge">0</div>
                             <span class="text-sm font-semibold">Carrito Actual</span>
+                            <i id="cart-toggle-icon" class="fa-solid fa-chevron-down text-apple-gray text-[10px] transition-transform"></i>
                         </div>
                         <span class="text-xs text-apple-gray" id="cart-items-count">0 ítems</span>
                     </div>
                     
-                    <div id="cart-items-list" class="max-h-32 overflow-y-auto space-y-2 mb-3 pr-1 text-xs divide-y divide-apple-border/40">
+                    <div id="cart-items-list" class="hidden max-h-32 overflow-y-auto space-y-2 mb-3 pr-1 text-xs divide-y divide-apple-border/40">
                         <p class="text-apple-gray text-center py-2">El carrito está vacío</p>
                     </div>
 
@@ -310,7 +341,7 @@
 
         </main>
 
-        <!-- Bottom Navigation Bar - Fixed to bottom of frame -->
+        <!-- Bottom Navigation Bar -->
         <nav class="bg-apple-card/95 backdrop-blur-xl border-t border-apple-border px-2 py-3 flex justify-around items-center z-50 shrink-0 shadow-lg mb-2">
             <button onclick="switchTab('pos')" id="nav-pos" class="nav-btn flex flex-col items-center flex-1 py-1 text-apple-blue transition">
                 <i class="fa-solid fa-cash-register text-lg mb-0.5"></i>
@@ -334,6 +365,43 @@
             </button>
         </nav>
 
+    </div>
+
+    <!-- QUICK VARIABLE AMOUNT MODAL -->
+    <div id="quick-variable-modal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 hidden flex flex-col justify-end items-center p-0">
+        <div class="bg-apple-card border border-apple-border w-full sm:max-w-md rounded-t-3xl p-6 space-y-4 modal-enter">
+            <div class="flex justify-between items-center">
+                <h3 class="font-bold text-base flex items-center space-x-2 text-apple-orange">
+                    <i class="fa-solid fa-bolt"></i>
+                    <span id="q-modal-main-title">Ítem Rápido / Monto Variable</span>
+                </h3>
+                <button onclick="closeQuickVariableModal()" class="w-8 h-8 rounded-full bg-apple-cardAlt text-apple-gray flex items-center justify-center">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <p class="text-xs text-apple-gray" id="q-modal-desc">Agrega un producto rápido al carrito ingresando nombre y monto libre (ej. Varios, Fotocopias, etc.).</p>
+
+            <div class="space-y-3">
+                <div>
+                    <label class="text-xs text-apple-gray block mb-1">Nombre / Concepto</label>
+                    <input type="text" id="q-var-name" placeholder="Ej. Varios / Fotocopias / Cigarrillos" class="w-full bg-apple-cardAlt text-white px-3 py-2.5 rounded-xl border border-apple-border text-sm focus:outline-none focus:border-apple-orange">
+                </div>
+                <div>
+                    <label class="text-xs text-apple-gray block mb-1">Monto Total ($ARS)</label>
+                    <input type="number" step="0.01" id="q-var-price" placeholder="0.00" class="w-full bg-apple-cardAlt text-white px-3 py-3 rounded-xl border border-apple-border text-lg font-bold text-apple-green focus:outline-none focus:border-apple-orange">
+                </div>
+                <div id="q-var-qty-container">
+                    <label class="text-xs text-apple-gray block mb-1">Cantidad</label>
+                    <input type="number" id="q-var-qty" value="1" min="1" class="w-full bg-apple-cardAlt text-white px-3 py-2.5 rounded-xl border border-apple-border text-sm focus:outline-none focus:border-apple-orange">
+                </div>
+            </div>
+
+            <button onclick="addQuickVariableToCart()" class="w-full bg-apple-orange py-3.5 rounded-xl text-sm font-bold text-white shadow-lg shadow-apple-orange/30 active:scale-95 transition flex items-center justify-center space-x-2">
+                <i class="fa-solid fa-cart-plus"></i>
+                <span>Agregar al Carrito</span>
+            </button>
+        </div>
     </div>
 
     <!-- BARCODE SCANNER MODAL -->
@@ -375,7 +443,7 @@
                     <span id="chk-subtotal">$0.00</span>
                 </div>
                 <div class="flex justify-between text-sm">
-                    <span class="text-apple-gray">IVA (Simulado ARCA):</span>
+                    <span class="text-apple-gray">IVA contenido (no discriminado):</span>
                     <span id="chk-iva">$0.00</span>
                 </div>
                 <div class="flex justify-between text-base font-bold pt-2 border-t border-apple-border">
@@ -473,7 +541,7 @@
                     <span id="ticket-subtotal">$0.00</span>
                 </div>
                 <div class="flex justify-between">
-                    <span class="text-gray-600">IVA / Impuestos:</span>
+                    <span class="text-gray-600">IVA contenido (no discrim.):</span>
                     <span id="ticket-iva">$0.00</span>
                 </div>
                 <div class="flex justify-between font-bold text-sm pt-1 border-t">
@@ -541,6 +609,7 @@
                         <option value="Almacén">Almacén</option>
                         <option value="Limpieza">Limpieza</option>
                         <option value="Snacks">Snacks</option>
+                        <option value="Peso / Varios">Peso / Varios</option>
                         <option value="Otros">Otros</option>
                     </select>
                 </div>
@@ -617,7 +686,11 @@
             { id: '3', barcode: '7791234003', name: 'Alfajor Havanna 6u', price: 4200, stock: 20, category: 'Almacén' },
             { id: '4', barcode: '7791234004', name: 'Papas Lays 150g', price: 1800, stock: 18, category: 'Snacks' },
             { id: '5', barcode: '7791234005', name: 'Lavandina Ayudín 1L', price: 1300, stock: 15, category: 'Limpieza' },
-            { id: '6', barcode: '7791234006', name: 'Agua Sin Gas 2L', price: 1100, stock: 40, category: 'Bebidas' }
+            { id: '6', barcode: '7791234006', name: 'Agua Sin Gas 2L', price: 1100, stock: 40, category: 'Bebidas' },
+            // NEW: $1 Base Weight / Open Import Items as requested
+            { id: 'p-pan', barcode: 'PAN-001', name: 'Panadería (Importe Libre)', price: 1, stock: 9999, category: 'Peso / Varios' },
+            { id: 'p-verd', barcode: 'VERD-001', name: 'Verdulería (Importe Libre)', price: 1, stock: 9999, category: 'Peso / Varios' },
+            { id: 'p-carn', barcode: 'CARN-001', name: 'Carnicería / Pollo (Importe Libre)', price: 1, stock: 9999, category: 'Peso / Varios' }
         ];
 
         const defaultCustomers = [
@@ -646,9 +719,10 @@
         };
 
         let cart = [];
+        let cartDetailsExpanded = false;
         let activeCategory = 'Todos';
         let selectedPaymentMethod = 'Efectivo';
-        let fiadoMode = 'select'; // 'select' or 'new'
+        let fiadoMode = 'select';
         let html5QrCode = null;
         let lastGeneratedTicket = null;
 
@@ -662,9 +736,104 @@
             updateCartUI();
         };
 
-        // Quick Add modal alias (opens inventory add product modal)
         function openQuickAddModal() {
             openAddProductModal();
+        }
+
+        // Quick Variable Amount Modal Logic
+        function openQuickVariableModal() {
+            const nameEl = document.getElementById('q-var-name');
+            const priceEl = document.getElementById('q-var-price');
+            const qtyEl = document.getElementById('q-var-qty');
+            const modal = document.getElementById('quick-variable-modal');
+            const titleEl = document.getElementById('q-modal-main-title');
+            const descEl = document.getElementById('q-modal-desc');
+
+            if (titleEl) titleEl.innerText = 'Ítem Rápido / Monto Variable';
+            if (descEl) descEl.innerText = 'Agrega un producto rápido al carrito ingresando nombre y monto libre.';
+            if (nameEl) {
+                nameEl.value = 'Varios';
+                nameEl.disabled = false;
+            }
+            if (priceEl) priceEl.value = '';
+            if (qtyEl) qtyEl.value = '1';
+            if (modal) modal.classList.remove('hidden');
+            if (priceEl) priceEl.focus();
+        }
+
+        // NEW: Open Direct Amount Prompt for Panadería, Verdulería or Carnicería ($1 Trick)
+        function openDirectAmountPrompt(departmentName) {
+            const modal = document.getElementById('quick-variable-modal');
+            const nameEl = document.getElementById('q-var-name');
+            const priceEl = document.getElementById('q-var-price');
+            const qtyEl = document.getElementById('q-var-qty');
+            const titleEl = document.getElementById('q-modal-main-title');
+            const descEl = document.getElementById('q-modal-desc');
+
+            if (titleEl) titleEl.innerText = `${departmentName} - Importe Directo`;
+            if (descEl) descEl.innerText = `Ingresa el total en pesos ($ARS) que marca el papelito (Truco $1: Se sumará exactamente el monto ingresado).`;
+            
+            if (nameEl) {
+                nameEl.value = `${departmentName} (Importe Libre)`;
+                nameEl.disabled = true;
+            }
+            if (qtyEl) qtyEl.value = '1'; // We will use price as the direct total or qty = amount if price is 1
+            if (priceEl) priceEl.value = '';
+
+            if (modal) modal.classList.remove('hidden');
+            if (priceEl) priceEl.focus();
+        }
+
+        function closeQuickVariableModal() {
+            const modal = document.getElementById('quick-variable-modal');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        function addQuickVariableToCart() {
+            const name = document.getElementById('q-var-name').value.trim() || 'Varios';
+            const priceOrAmount = parseFloat(document.getElementById('q-var-price').value);
+            const qtyInput = parseInt(document.getElementById('q-var-qty').value) || 1;
+
+            if (isNaN(priceOrAmount) || priceOrAmount <= 0) {
+                showToast('Ingrese un monto válido mayor a 0', 'error');
+                return;
+            }
+
+            // Check if this was opened via direct department prompt (where name is disabled and price is $1 base or custom open amount)
+            let finalPrice = priceOrAmount;
+            let finalQty = qtyInput;
+
+            const isDeptPrompt = name.includes('Importe Libre');
+            if (isDeptPrompt) {
+                // Using the requested trick: product priced at $1, quantity = amount in pesos so total equals exact $ARS!
+                // Or we can add it as a custom unit item with direct price. Let's make it direct price with qty 1 for clarity, or $1 with qty = amount.
+                // Let's check: if we use price = priceOrAmount and qty = 1, it's extremely clear in the cart and ticket!
+                finalPrice = priceOrAmount;
+                finalQty = 1;
+            }
+
+            const customItem = {
+                id: 'quick-' + Date.now(),
+                barcode: 'QV-' + Math.floor(1000 + Math.random() * 9000),
+                name: name,
+                price: finalPrice,
+                stock: 9999,
+                category: 'Peso / Varios',
+                qty: finalQty,
+                isVariable: true
+            };
+
+            const existing = cart.find(item => item.name === name && item.price === finalPrice && item.isVariable);
+            if (existing) {
+                existing.qty += finalQty;
+            } else {
+                if (cart.length === 0) cartDetailsExpanded = true;
+                cart.push(customItem);
+            }
+
+            updateCartUI();
+            closeQuickVariableModal();
+            showToast(`Agregado al carrito: ${name} ($${finalPrice.toLocaleString()})`);
         }
 
         // Tab Navigation
@@ -687,7 +856,6 @@
             if (mainContainer) mainContainer.scrollTop = 0;
         }
 
-        // Save to LocalStorage
         function persistData() {
             localStorage.setItem('pos_products', JSON.stringify(products));
             localStorage.setItem('pos_customers', JSON.stringify(customers));
@@ -761,7 +929,7 @@
                 return;
             }
 
-            const existing = cart.find(item => item.id === productId);
+            const existing = cart.find(item => item.id === productId && !item.isVariable);
             if (existing) {
                 if (existing.qty < product.stock) {
                     existing.qty++;
@@ -770,6 +938,7 @@
                     return;
                 }
             } else {
+                if (cart.length === 0) cartDetailsExpanded = true;
                 cart.push({ ...product, qty: 1 });
             }
             updateCartUI();
@@ -788,6 +957,10 @@
             if (countLabel) countLabel.innerText = `${totalItems} ítem${totalItems === 1 ? '' : 's'}`;
             if (totalDisplay) totalDisplay.innerText = `$${totalPrice.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
 
+            const icon = document.getElementById('cart-toggle-icon');
+            if (list) list.classList.toggle('hidden', !cartDetailsExpanded);
+            if (icon) icon.style.transform = cartDetailsExpanded ? 'rotate(180deg)' : 'rotate(0deg)';
+
             if (!list) return;
             if (cart.length === 0) {
                 list.innerHTML = `<p class="text-apple-gray text-center py-2">El carrito está vacío</p>`;
@@ -800,7 +973,7 @@
                 row.className = "flex justify-between items-center py-1.5";
                 row.innerHTML = `
                     <div class="flex-1 pr-2">
-                        <p class="font-medium truncate">${item.name}</p>
+                        <p class="font-medium truncate">${item.name} ${item.isVariable ? '<span class="text-[9px] text-apple-orange bg-apple-orange/10 px-1.5 py-0.5 rounded">Rápido</span>' : ''}</p>
                         <p class="text-[10px] text-apple-gray">$${item.price.toLocaleString()} c/u</p>
                     </div>
                     <div class="flex items-center space-x-2">
@@ -826,7 +999,16 @@
 
         function clearCart() {
             cart = [];
+            cartDetailsExpanded = false;
             updateCartUI();
+        }
+
+        function toggleCartDetails() {
+            cartDetailsExpanded = !cartDetailsExpanded;
+            const list = document.getElementById('cart-items-list');
+            const icon = document.getElementById('cart-toggle-icon');
+            if (list) list.classList.toggle('hidden', !cartDetailsExpanded);
+            if (icon) icon.style.transform = cartDetailsExpanded ? 'rotate(180deg)' : 'rotate(0deg)';
         }
 
         // --- CHECKOUT & ARCA TICKET GENERATION ---
@@ -847,7 +1029,6 @@
             if (chkIva) chkIva.innerText = `$${iva.toLocaleString(undefined, {minimumFractionDigits: 2})} (21%)`;
             if (chkTot) chkTot.innerText = `$${total.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
 
-            // Default to Efectivo
             setPaymentMethod('Efectivo');
 
             const select = document.getElementById('chk-customer');
@@ -949,11 +1130,14 @@
             const compNro = Math.floor(10000000 + Math.random() * 90000000);
             const cae = Math.floor(70000000000000 + Math.random() * 9000000000000);
             const nowFormatted = new Date().toLocaleString();
+            const nowTimestamp = Date.now();
 
             cart.forEach(cartItem => {
-                const prod = products.find(p => p.id === cartItem.id);
-                if (prod) {
-                    prod.stock = Math.max(0, prod.stock - cartItem.qty);
+                if (!cartItem.isVariable) {
+                    const prod = products.find(p => p.id === cartItem.id);
+                    if (prod) {
+                        prod.stock = Math.max(0, prod.stock - cartItem.qty);
+                    }
                 }
             });
 
@@ -970,6 +1154,7 @@
             const saleRecord = {
                 id: 'V-' + Date.now(),
                 date: nowFormatted,
+                timestamp: nowTimestamp,
                 items: [...cart],
                 subtotal,
                 iva,
@@ -1225,11 +1410,19 @@
             if (!list) return;
             list.innerHTML = '';
 
-            const dailyTotal = salesHistory.reduce((sum, s) => sum + s.total, 0);
+            const today = new Date();
+            const todaysSales = salesHistory.filter(s => {
+                if (!s.timestamp) return false; // ventas antiguas sin timestamp no se cuentan como "de hoy"
+                const d = new Date(s.timestamp);
+                return d.getFullYear() === today.getFullYear() &&
+                       d.getMonth() === today.getMonth() &&
+                       d.getDate() === today.getDate();
+            });
+            const dailyTotal = todaysSales.reduce((sum, s) => sum + s.total, 0);
             const dailyTotEl = document.getElementById('stats-daily-total');
             const dailyCntEl = document.getElementById('stats-daily-count');
             if (dailyTotEl) dailyTotEl.innerText = `$${dailyTotal.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
-            if (dailyCntEl) dailyCntEl.innerText = salesHistory.length;
+            if (dailyCntEl) dailyCntEl.innerText = todaysSales.length;
 
             if (salesHistory.length === 0) {
                 list.innerHTML = `<div class="text-center py-10 text-apple-gray text-xs">No hay ventas registradas aún</div>`;
@@ -1456,6 +1649,7 @@
             const paymentSaleRecord = {
                 id: 'V-PAY-' + Date.now(),
                 date: paymentRecord.date,
+                timestamp: Date.now(),
                 items: [{ name: `Pago de Fiado / Cuenta - ${c.name}`, qty: 1, price: amount }],
                 subtotal: amount,
                 iva: 0,
@@ -1467,7 +1661,6 @@
             };
             salesHistory.unshift(paymentSaleRecord);
 
-            // If debt is fully paid off, remove customer from active debts list
             if (c.debt <= 0) {
                 customers = customers.filter(cust => cust.id !== customerId);
                 showToast(`¡Deuda saldada por completo! Cliente dado de alta.`);
@@ -1608,7 +1801,7 @@
             toast.innerHTML = `<div class="flex items-center space-x-2"><i class="fa-solid ${type === 'error' ? 'fa-circle-exclamation text-white' : 'fa-circle-check text-apple-green'}"></i><span>${message}</span></div>`;
             document.body.appendChild(toast);
 
-            setTimeout(() => {
+setTimeout(() => {
                 toast.style.opacity = '0';
                 toast.style.transition = 'opacity 0.3s ease';
                 setTimeout(() => toast.remove(), 300);
