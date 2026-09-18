@@ -1,0 +1,1619 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Punto de Venta Profesional</title>
+    
+    <!-- iOS & Android PWA Fullscreen Meta Tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="POS Profesional">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#000000">
+
+    <!-- Dynamic Web App Manifest -->
+    <link rel="manifest" href="data:application/manifest+json;charset=utf-8,%7B%22name%22%3A%22Punto%20de%20Venta%20Profesional%22%2C%22short_name%22%3A%22POS%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23000000%22%2C%22theme_color%22%3A%22%23000000%22%7D">
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        apple: {
+                            bg: '#000000',
+                            card: '#1c1c1e',
+                            cardAlt: '#2c2c2e',
+                            border: '#38383a',
+                            blue: '#0a84ff',
+                            green: '#30d158',
+                            orange: '#ff9f0a',
+                            red: '#ff453a',
+                            gray: '#8e8e93',
+                            lightGray: '#121212'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['-apple-system', 'BlinkMacSystemFont', "Segoe UI", 'Roboto', 'Helvetica', 'Arial', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- html5-qrcode CDN -->
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <!-- QRCode generator library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        body {
+            background-color: #000000;
+            color: #ffffff;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+            padding-top: max(env(safe-area-inset-top), 36px); /* Increased safe area top padding */
+            padding-bottom: max(env(safe-area-inset-bottom), 12px); /* Increased bottom safe area padding */
+            overflow: hidden; /* Prevent body scrolling so layout stays locked */
+        }
+        .iphone-frame {
+            max-width: 440px;
+            margin: 0 auto;
+            height: 100vh;
+            max-height: 100vh;
+            background-color: #000000;
+            position: relative;
+            box-shadow: 0 0 50px rgba(0,0,0,0.8);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        @media (min-width: 640px) {
+            .iphone-frame {
+                border: 12px solid #2c2c2e;
+                border-radius: 48px;
+                height: 890px;
+                max-height: 92vh;
+                margin-top: 4vh;
+                overflow: hidden;
+            }
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .modal-enter {
+            animation: modalFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        @keyframes modalFadeIn {
+            from { opacity: 0; transform: scale(0.95) translateY(10px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+    </style>
+</head>
+<body class="bg-black text-white antialiased flex justify-center items-center h-screen">
+
+    <div class="iphone-frame w-full flex flex-col justify-between">
+        
+        <!-- App Header Title Bar with extra padding to avoid overlap with mobile status bar/notch -->
+        <header class="px-5 pt-8 pb-3.5 bg-apple-card/95 backdrop-blur-md flex justify-between items-center border-b border-apple-border z-40 shrink-0">
+            <div class="flex items-center space-x-3">
+                <div class="w-9 h-9 rounded-xl bg-apple-blue/20 text-apple-blue flex items-center justify-center font-bold text-lg">
+                    <i class="fa-solid fa-cash-register"></i>
+                </div>
+                <div>
+                    <h1 id="header-title" class="font-bold text-base leading-tight">Caja Registradora</h1>
+                    <p class="text-[11px] text-apple-gray" id="store-subtitle">ARCA • Monotributo C</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-2">
+                <button onclick="openScannerModal()" class="w-9 h-9 rounded-full bg-apple-cardAlt text-apple-blue flex items-center justify-center active:scale-95 transition">
+                    <i class="fa-solid fa-barcode text-lg"></i>
+                </button>
+                <button onclick="openQuickAddModal()" class="w-9 h-9 rounded-full bg-apple-blue text-white flex items-center justify-center active:scale-95 transition shadow-lg shadow-apple-blue/30">
+                    <i class="fa-solid fa-plus"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Content Area with Dynamic Views (Scrollable Middle Section) -->
+        <main class="flex-1 overflow-y-auto relative hide-scrollbar pt-4 pb-24" id="main-container">
+            
+            <!-- VIEW 1: POS / CHECKOUT -->
+            <section id="view-pos" class="view-section p-4 space-y-4">
+                <div class="flex space-x-2">
+                    <div class="relative flex-1">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3.5 text-apple-gray text-sm"></i>
+                        <input type="text" id="pos-search" oninput="filterPOSProducts()" placeholder="Buscar producto o código..." 
+                            class="w-full bg-apple-card text-white pl-10 pr-4 py-3 rounded-xl border border-apple-border text-sm focus:outline-none focus:border-apple-blue">
+                    </div>
+                    <button onclick="openScannerModal()" class="bg-apple-card border border-apple-border px-4 rounded-xl text-apple-blue flex items-center justify-center active:scale-95 transition">
+                        <i class="fa-solid fa-camera text-lg"></i>
+                    </button>
+                </div>
+
+                <!-- Categories -->
+                <div class="flex space-x-2 overflow-x-auto hide-scrollbar pb-1" id="pos-categories">
+                    <button onclick="selectCategory('Todos')" class="cat-pill px-4 py-1.5 rounded-full text-xs font-medium bg-apple-blue text-white whitespace-nowrap transition">Todos</button>
+                    <button onclick="selectCategory('Bebidas')" class="cat-pill px-4 py-1.5 rounded-full text-xs font-medium bg-apple-card text-apple-gray border border-apple-border whitespace-nowrap transition">Bebidas</button>
+                    <button onclick="selectCategory('Almacén')" class="cat-pill px-4 py-1.5 rounded-full text-xs font-medium bg-apple-card text-apple-gray border border-apple-border whitespace-nowrap transition">Almacén</button>
+                    <button onclick="selectCategory('Limpieza')" class="cat-pill px-4 py-1.5 rounded-full text-xs font-medium bg-apple-card text-apple-gray border border-apple-border whitespace-nowrap transition">Limpieza</button>
+                    <button onclick="selectCategory('Snacks')" class="cat-pill px-4 py-1.5 rounded-full text-xs font-medium bg-apple-card text-apple-gray border border-apple-border whitespace-nowrap transition">Snacks</button>
+                </div>
+
+                <!-- Product Grid -->
+                <div class="grid grid-cols-2 gap-3" id="pos-product-grid"></div>
+
+                <!-- Floating Cart / Checkout Drawer Trigger -->
+                <div id="cart-drawer-summary" class="bg-apple-card/95 backdrop-blur-md border border-apple-border rounded-2xl p-4 shadow-2xl transition-all my-4">
+                    <div class="flex justify-between items-center mb-3">
+                        <div class="flex items-center space-x-2">
+                            <div class="w-7 h-7 rounded-full bg-apple-blue/20 text-apple-blue flex items-center justify-center text-xs font-bold" id="cart-badge">0</div>
+                            <span class="text-sm font-semibold">Carrito Actual</span>
+                        </div>
+                        <span class="text-xs text-apple-gray" id="cart-items-count">0 ítems</span>
+                    </div>
+                    
+                    <div id="cart-items-list" class="max-h-32 overflow-y-auto space-y-2 mb-3 pr-1 text-xs divide-y divide-apple-border/40">
+                        <p class="text-apple-gray text-center py-2">El carrito está vacío</p>
+                    </div>
+
+                    <div class="flex justify-between items-center pt-2 border-t border-apple-border mb-3">
+                        <span class="text-sm text-apple-gray">Total a Pagar:</span>
+                        <span class="text-lg font-bold text-apple-green" id="cart-total-display">$0.00</span>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2">
+                        <button onclick="clearCart()" class="bg-apple-cardAlt border border-apple-border py-2.5 rounded-xl text-xs font-semibold text-apple-red active:scale-95 transition">
+                            <i class="fa-solid fa-trash mr-1"></i> Vaciar
+                        </button>
+                        <button onclick="openCheckoutModal()" class="bg-apple-blue py-2.5 rounded-xl text-xs font-semibold text-white shadow-lg shadow-apple-blue/30 active:scale-95 transition flex items-center justify-center space-x-1">
+                            <i class="fa-solid fa-credit-card"></i> <span>Cobrar</span>
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- VIEW 2: INVENTORY MANAGEMENT -->
+            <section id="view-inventory" class="view-section p-4 space-y-4 hidden">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-lg font-bold">Gestión de Stock</h2>
+                    <button onclick="openAddProductModal()" class="bg-apple-blue text-white px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center space-x-1 active:scale-95 transition">
+                        <i class="fa-solid fa-plus"></i> <span>Nuevo Producto</span>
+                    </button>
+                </div>
+
+                <div class="relative">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3.5 text-apple-gray text-sm"></i>
+                    <input type="text" id="inventory-search" oninput="renderInventoryList()" placeholder="Buscar por nombre, código o categoría..." 
+                        class="w-full bg-apple-card text-white pl-10 pr-4 py-3 rounded-xl border border-apple-border text-sm focus:outline-none focus:border-apple-blue">
+                </div>
+
+                <div class="space-y-2.5 pb-6" id="inventory-list"></div>
+            </section>
+
+            <!-- VIEW 3: SALES HISTORY & ARCA TICKETS -->
+            <section id="view-history" class="view-section p-4 space-y-4 hidden">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h2 class="text-lg font-bold">Historial de Ventas</h2>
+                        <p class="text-xs text-apple-gray">Facturas ARCA simuladas</p>
+                    </div>
+                    <button onclick="exportSalesCSV()" class="bg-apple-card border border-apple-border text-apple-blue px-3 py-1.5 rounded-xl text-xs font-semibold active:scale-95 transition">
+                        <i class="fa-solid fa-download mr-1"></i> Exportar
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="bg-apple-card border border-apple-border p-3.5 rounded-2xl">
+                        <p class="text-xs text-apple-gray">Ventas del Día</p>
+                        <p class="text-xl font-bold text-apple-green mt-1" id="stats-daily-total">$0.00</p>
+                    </div>
+                    <div class="bg-apple-card border border-apple-border p-3.5 rounded-2xl">
+                        <p class="text-xs text-apple-gray">Operaciones</p>
+                        <p class="text-xl font-bold text-apple-blue mt-1" id="stats-daily-count">0</p>
+                    </div>
+                </div>
+
+                <div class="space-y-3 pb-6" id="sales-history-list"></div>
+            </section>
+
+            <!-- VIEW 4: DEBT / FIADOS -->
+            <section id="view-fiados" class="view-section p-4 space-y-4 hidden">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h2 class="text-lg font-bold">Cuentas Corrientes / Fiados</h2>
+                        <p class="text-xs text-apple-gray">Detalle de compras y pagos por cliente</p>
+                    </div>
+                    <button onclick="openAddCustomerModal()" class="bg-apple-blue text-white px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center space-x-1 active:scale-95 transition">
+                        <i class="fa-solid fa-user-plus"></i> <span>Cliente</span>
+                    </button>
+                </div>
+
+                <div class="bg-gradient-to-r from-apple-card to-apple-cardAlt border border-apple-border p-4 rounded-2xl flex justify-between items-center">
+                    <div>
+                        <p class="text-xs text-apple-gray">Deuda Total Acumulada</p>
+                        <p class="text-2xl font-bold text-apple-orange mt-1" id="total-debt-display">$0.00</p>
+                    </div>
+                    <div class="w-12 h-12 rounded-2xl bg-apple-orange/20 text-apple-orange flex items-center justify-center text-xl">
+                        <i class="fa-solid fa-book-open"></i>
+                    </div>
+                </div>
+
+                <!-- Customer Search Bar for Fiados -->
+                <div class="relative">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3.5 text-apple-gray text-sm"></i>
+                    <input type="text" id="fiados-search" oninput="renderCustomersDebt()" placeholder="Buscar cliente por nombre o teléfono..." 
+                        class="w-full bg-apple-card text-white pl-10 pr-4 py-3 rounded-xl border border-apple-border text-sm focus:outline-none focus:border-apple-blue">
+                </div>
+
+                <div class="space-y-3 pb-6" id="customers-debt-list"></div>
+            </section>
+
+            <!-- VIEW 5: SETTINGS & ARCA CONFIG -->
+            <section id="view-settings" class="view-section p-4 space-y-4 hidden">
+                <h2 class="text-lg font-bold">Configuración AFIP / ARCA</h2>
+
+                <div class="bg-apple-card border border-apple-border rounded-2xl p-4 space-y-3">
+                    <h3 class="text-sm font-semibold text-apple-blue"><i class="fa-solid fa-building-columns mr-1.5"></i> Datos Fiscales del Negocio</h3>
+                    
+                    <div>
+                        <label class="text-xs text-apple-gray block mb-1">Razón Social</label>
+                        <input type="text" id="set-razon" value="Kiosco Don Julio S.A." class="w-full bg-apple-cardAlt text-white px-3 py-2.5 rounded-xl border border-apple-border text-sm focus:outline-none focus:border-apple-blue">
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="text-xs text-apple-gray block mb-1">CUIT</label>
+                            <input type="text" id="set-cuit" value="30-71234567-9" class="w-full bg-apple-cardAlt text-white px-3 py-2.5 rounded-xl border border-apple-border text-sm focus:outline-none focus:border-apple-blue">
+                        </div>
+                        <div>
+                            <label class="text-xs text-apple-gray block mb-1">Punto de Venta</label>
+                            <input type="text" id="set-ptovta" value="0004" class="w-full bg-apple-cardAlt text-white px-3 py-2.5 rounded-xl border border-apple-border text-sm focus:outline-none focus:border-apple-blue">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="text-xs text-apple-gray block mb-1">Condición IVA</label>
+                        <select id="set-iva" class="w-full bg-apple-cardAlt text-white px-3 py-2.5 rounded-xl border border-apple-border text-sm focus:outline-none focus:border-apple-blue">
+                            <option value="Monotributo">Responsable Monotributo</option>
+                            <option value="Responsable Inscripto">Responsable Inscripto</option>
+                            <option value="Exento">IVA Exento</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-xs text-apple-gray block mb-1">Inicio de Actividades</label>
+                        <input type="text" id="set-inicio" value="01/01/2020" class="w-full bg-apple-cardAlt text-white px-3 py-2.5 rounded-xl border border-apple-border text-sm focus:outline-none focus:border-apple-blue">
+                    </div>
+                    <button onclick="saveSettings()" class="w-full bg-apple-blue py-3 rounded-xl text-xs font-semibold text-white shadow-lg shadow-apple-blue/30 active:scale-95 transition mt-2">
+                        Guardar Cambios ARCA
+                    </button>
+                </div>
+
+                <div class="bg-apple-card border border-apple-border rounded-2xl p-4 space-y-3 pb-6">
+                    <h3 class="text-sm font-semibold text-apple-orange"><i class="fa-solid fa-database mr-1.5"></i> Gestión de Datos (Local Storage)</h3>
+                    <p class="text-xs text-apple-gray">Tus productos, ventas y fiados se guardan de forma segura en este dispositivo.</p>
+                    <div class="grid grid-cols-2 gap-2 pt-1">
+                        <button onclick="resetDemoData()" class="bg-apple-cardAlt border border-apple-border py-2.5 rounded-xl text-xs font-semibold text-apple-red active:scale-95 transition">
+                            <i class="fa-solid fa-rotate-right mr-1"></i> Restaurar Demo
+                        </button>
+                        <button onclick="exportAllDataJSON()" class="bg-apple-cardAlt border border-apple-border py-2.5 rounded-xl text-xs font-semibold text-apple-blue active:scale-95 transition">
+                            <i class="fa-solid fa-file-arrow-down mr-1"></i> Respaldar JSON
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+
+        <!-- Bottom Navigation Bar - Fixed to bottom of frame -->
+        <nav class="bg-apple-card/95 backdrop-blur-xl border-t border-apple-border px-2 py-3 flex justify-around items-center z-50 shrink-0 shadow-lg mb-2">
+            <button onclick="switchTab('pos')" id="nav-pos" class="nav-btn flex flex-col items-center flex-1 py-1 text-apple-blue transition">
+                <i class="fa-solid fa-cash-register text-lg mb-0.5"></i>
+                <span class="text-[10px] font-medium">Caja</span>
+            </button>
+            <button onclick="switchTab('inventory')" id="nav-inventory" class="nav-btn flex flex-col items-center flex-1 py-1 text-apple-gray transition">
+                <i class="fa-solid fa-boxes-stacked text-lg mb-0.5"></i>
+                <span class="text-[10px] font-medium">Stock</span>
+            </button>
+            <button onclick="switchTab('history')" id="nav-history" class="nav-btn flex flex-col items-center flex-1 py-1 text-apple-gray transition">
+                <i class="fa-solid fa-receipt text-lg mb-0.5"></i>
+                <span class="text-[10px] font-medium">Historial</span>
+            </button>
+            <button onclick="switchTab('fiados')" id="nav-fiados" class="nav-btn flex flex-col items-center flex-1 py-1 text-apple-gray transition">
+                <i class="fa-solid fa-address-book text-lg mb-0.5"></i>
+                <span class="text-[10px] font-medium">Fiados</span>
+            </button>
+            <button onclick="switchTab('settings')" id="nav-settings" class="nav-btn flex flex-col items-center flex-1 py-1 text-apple-gray transition">
+                <i class="fa-solid fa-gear text-lg mb-0.5"></i>
+                <span class="text-[10px] font-medium">ARCA</span>
+            </button>
+        </nav>
+
+    </div>
+
+    <!-- BARCODE SCANNER MODAL -->
+    <div id="scanner-modal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 hidden flex flex-col justify-end sm:justify-center items-center p-0 sm:p-4">
+        <div class="bg-apple-card border border-apple-border w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl p-5 space-y-4 modal-enter max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center">
+                <h3 class="font-bold text-base flex items-center space-x-2">
+                    <i class="fa-solid fa-barcode text-apple-blue"></i>
+                    <span>Escanear Código de Barras</span>
+                </h3>
+                <button onclick="closeScannerModal()" class="w-8 h-8 rounded-full bg-apple-cardAlt text-apple-gray flex items-center justify-center">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            
+            <div id="reader" class="w-full rounded-2xl overflow-hidden bg-black border border-apple-border"></div>
+            
+            <p class="text-xs text-apple-gray text-center">Apunta la cámara al código de barras del producto (EAN-13 / QR).</p>
+            
+            <button onclick="closeScannerModal()" class="w-full bg-apple-cardAlt border border-apple-border py-3 rounded-xl text-xs font-semibold text-white active:scale-95 transition">
+                Cerrar Cámara
+            </button>
+        </div>
+    </div>
+
+    <!-- CHECKOUT MODAL -->
+    <div id="checkout-modal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 hidden flex flex-col justify-end items-center p-0">
+        <div class="bg-apple-card border border-apple-border w-full sm:max-w-md rounded-t-3xl p-6 space-y-5 modal-enter">
+            <div class="flex justify-between items-center">
+                <h3 class="font-bold text-lg">Finalizar Venta</h3>
+                <button onclick="closeCheckoutModal()" class="w-8 h-8 rounded-full bg-apple-cardAlt text-apple-gray flex items-center justify-center">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="bg-apple-cardAlt p-4 rounded-2xl space-y-2 border border-apple-border">
+                <div class="flex justify-between text-sm">
+                    <span class="text-apple-gray">Subtotal:</span>
+                    <span id="chk-subtotal">$0.00</span>
+                </div>
+                <div class="flex justify-between text-sm">
+                    <span class="text-apple-gray">IVA (Simulado ARCA):</span>
+                    <span id="chk-iva">$0.00</span>
+                </div>
+                <div class="flex justify-between text-base font-bold pt-2 border-t border-apple-border">
+                    <span>Total a Pagar:</span>
+                    <span class="text-apple-green" id="chk-total">$0.00</span>
+                </div>
+            </div>
+
+            <div>
+                <label class="text-xs text-apple-gray block mb-2 font-medium">Método de Pago</label>
+                <div class="grid grid-cols-2 gap-2 mb-3">
+                    <button onclick="setPaymentMethod('Efectivo')" id="pay-efectivo" class="pay-btn bg-apple-blue text-white py-3 rounded-xl text-xs font-semibold border border-apple-blue transition flex flex-col items-center justify-center space-y-1">
+                        <i class="fa-solid fa-money-bill-wave text-base"></i>
+                        <span>Efectivo</span>
+                    </button>
+                    <button onclick="setPaymentMethod('Tarjeta')" id="pay-tarjeta" class="pay-btn bg-apple-cardAlt text-apple-gray py-3 rounded-xl text-xs font-semibold border border-apple-border transition flex flex-col items-center justify-center space-y-1">
+                        <i class="fa-solid fa-credit-card text-base"></i>
+                        <span>Tarjeta</span>
+                    </button>
+                    <button onclick="setPaymentMethod('QR / Transferencia')" id="pay-qr" class="pay-btn bg-apple-cardAlt text-apple-gray py-3 rounded-xl text-xs font-semibold border border-apple-border transition flex flex-col items-center justify-center space-y-1">
+                        <i class="fa-solid fa-qrcode text-base"></i>
+                        <span>MercadoPago</span>
+                    </button>
+                    <button onclick="setPaymentMethod('Fiado')" id="pay-fiado" class="pay-btn bg-apple-cardAlt text-apple-gray py-3 rounded-xl text-xs font-semibold border border-apple-border transition flex flex-col items-center justify-center space-y-1">
+                        <i class="fa-solid fa-book-bookmark text-base"></i>
+                        <span>Fiado / Cuenta</span>
+                    </button>
+                </div>
+                
+                <!-- Fiado Customer Selection / Quick Add Container -->
+                <div id="customer-select-container" class="hidden space-y-3 pt-2 border-t border-apple-border">
+                    <div class="flex justify-between items-center">
+                        <label class="text-xs text-apple-orange font-semibold">Seleccionar o Registrar Cliente:</label>
+                        <div class="flex space-x-1">
+                            <button type="button" onclick="toggleFiadoMode('select')" id="btn-mode-select" class="text-[10px] px-2 py-0.5 rounded-lg bg-apple-blue text-white font-medium">Existente</button>
+                            <button type="button" onclick="toggleFiadoMode('new')" id="btn-mode-new" class="text-[10px] px-2 py-0.5 rounded-lg bg-apple-cardAlt text-apple-gray font-medium">Nuevo</button>
+                        </div>
+                    </div>
+
+                    <!-- Mode 1: Select Existing -->
+                    <div id="fiado-mode-select-box">
+                        <select id="chk-customer" class="w-full bg-apple-cardAlt text-white px-3 py-2.5 rounded-xl border border-apple-border text-sm focus:outline-none focus:border-apple-blue">
+                            <option value="">-- Seleccione Cliente --</option>
+                        </select>
+                    </div>
+
+                    <!-- Mode 2: Quick Register New Customer -->
+                    <div id="fiado-mode-new-box" class="hidden space-y-2 bg-apple-cardAlt p-3 rounded-xl border border-apple-border">
+                        <div>
+                            <label class="text-[10px] text-apple-gray block mb-0.5">Nombre y Apellido</label>
+                            <input type="text" id="chk-new-cust-name" placeholder="Ej. Juan Pérez" class="w-full bg-apple-card text-white px-3 py-2 rounded-lg border border-apple-border text-xs focus:outline-none focus:border-apple-blue">
+                        </div>
+                        <div>
+                            <label class="text-[10px] text-apple-gray block mb-0.5">Número de WhatsApp</label>
+                            <input type="text" id="chk-new-cust-phone" placeholder="Ej. 5493854123456" class="w-full bg-apple-card text-white px-3 py-2 rounded-lg border border-apple-border text-xs focus:outline-none focus:border-apple-blue">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <button onclick="processCheckout()" class="w-full bg-apple-green py-3.5 rounded-xl text-sm font-bold text-black shadow-lg shadow-apple-green/30 active:scale-95 transition flex items-center justify-center space-x-2">
+                <i class="fa-solid fa-check-circle text-lg"></i>
+                <span>Confirmar y Emitir Ticket ARCA</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- TICKET & ARCA INVOICE PREVIEW MODAL -->
+    <div id="ticket-modal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 hidden flex flex-col justify-end sm:justify-center items-center p-0 sm:p-4">
+        <div class="bg-white text-black w-full sm:max-w-sm rounded-t-3xl sm:rounded-3xl p-6 space-y-4 modal-enter max-h-[90vh] overflow-y-auto shadow-2xl">
+            <div class="flex justify-between items-center border-b pb-3">
+                <div class="flex items-center space-x-2">
+                    <div class="w-8 h-8 bg-black text-white rounded-lg flex items-center justify-center font-bold text-xs">A</div>
+                    <div>
+                        <h4 class="font-bold text-sm leading-tight" id="ticket-razon">Kiosco Don Julio</h4>
+                        <p class="text-[10px] text-gray-500">CUIT: <span id="ticket-cuit">30-71234567-9</span></p>
+                    </div>
+                </div>
+                <button onclick="closeTicketModal()" class="w-7 h-7 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="text-center space-y-0.5 py-1 border-b pb-3">
+                <p class="text-xs font-bold uppercase" id="ticket-type">FACTURA TIPO C</p>
+                <p class="text-[11px] text-gray-600">Punto de Venta: <span id="ticket-ptovta">0004</span> | Comp. Nro: <span id="ticket-nro">00001234</span></p>
+                <p class="text-[11px] text-gray-600">Fecha: <span id="ticket-fecha">18/09/2026</span></p>
+            </div>
+
+            <div class="space-y-1.5 max-h-40 overflow-y-auto text-xs divide-y divide-gray-100" id="ticket-items-container"></div>
+
+            <div class="border-t pt-2 space-y-1 text-xs">
+                <div class="flex justify-between">
+                    <span class="text-gray-600">Subtotal:</span>
+                    <span id="ticket-subtotal">$0.00</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-600">IVA / Impuestos:</span>
+                    <span id="ticket-iva">$0.00</span>
+                </div>
+                <div class="flex justify-between font-bold text-sm pt-1 border-t">
+                    <span>TOTAL:</span>
+                    <span id="ticket-total">$0.00</span>
+                </div>
+            </div>
+
+            <div class="bg-gray-50 p-3 rounded-xl border border-gray-200 text-center space-y-2">
+                <div id="qrcode-container" class="flex justify-center my-1"></div>
+                <p class="text-[10px] font-mono text-gray-600" id="ticket-cae">CAE N°: 73492810482910</p>
+                <p class="text-[10px] text-gray-500">Vto. CAE: 28/09/2026</p>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2 pt-2">
+                <button onclick="shareWhatsApp()" class="bg-[#25D366] text-white py-3 rounded-xl text-xs font-bold flex items-center justify-center space-x-1.5 shadow-lg shadow-[#25D366]/30 active:scale-95 transition">
+                    <i class="fa-brands fa-whatsapp text-base"></i>
+                    <span>WhatsApp</span>
+                </button>
+                <button onclick="closeTicketModal()" class="bg-black text-white py-3 rounded-xl text-xs font-bold active:scale-95 transition">
+                    Nueva Venta
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ADD / EDIT PRODUCT MODAL -->
+    <div id="product-modal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 hidden flex flex-col justify-end items-center p-0">
+        <div class="bg-apple-card border border-apple-border w-full sm:max-w-md rounded-t-3xl p-6 space-y-4 modal-enter max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center">
+                <h3 class="font-bold text-base" id="product-modal-title">Nuevo Producto</h3>
+                <button onclick="closeProductModal()" class="w-8 h-8 rounded-full bg-apple-cardAlt text-apple-gray flex items-center justify-center">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <input type="hidden" id="prod-edit-id">
+
+            <div class="space-y-3">
+                <div>
+                    <label class="text-xs text-apple-gray block mb-1">Código de Barras</label>
+                    <div class="flex space-x-2">
+                        <input type="text" id="prod-barcode" placeholder="Ej. 7791234567890" class="flex-1 bg-apple-cardAlt text-white px-3 py-2.5 rounded-xl border border-apple-border text-sm focus:outline-none focus:border-apple-blue">
+                        <button onclick="generateRandomBarcode()" class="bg-apple-cardAlt border border-apple-border px-3 rounded-xl text-apple-blue text-xs">Generar</button>
+                    </div>
+                </div>
+                <div>
+                    <label class="text-xs text-apple-gray block mb-1">Nombre del Producto</label>
+                    <input type="text" id="prod-name" placeholder="Ej. Coca Cola 1.5L" class="w-full bg-apple-cardAlt text-white px-3 py-2.5 rounded-xl border border-apple-border text-sm focus:outline-none focus:border-apple-blue">
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="text-xs text-apple-gray block mb-1">Precio ($ARS)</label>
+                        <input type="number" step="0.01" id="prod-price" placeholder="1500.00" class="w-full bg-apple-cardAlt text-white px-3 py-2.5 rounded-xl border border-apple-border text-sm focus:outline-none focus:border-apple-blue">
+                    </div>
+                    <div>
+                        <label class="text-xs text-apple-gray block mb-1">Stock Actual</label>
+                        <input type="number" id="prod-stock" placeholder="24" class="w-full bg-apple-cardAlt text-white px-3 py-2.5 rounded-xl border border-apple-border text-sm focus:outline-none focus:border-apple-blue">
+                    </div>
+                </div>
+                <div>
+                    <label class="text-xs text-apple-gray block mb-1">Categoría</label>
+                    <select id="prod-category" class="w-full bg-apple-cardAlt text-white px-3 py-2.5 rounded-xl border border-apple-border text-sm focus:outline-none focus:border-apple-blue">
+                        <option value="Bebidas">Bebidas</option>
+                        <option value="Almacén">Almacén</option>
+                        <option value="Limpieza">Limpieza</option>
+                        <option value="Snacks">Snacks</option>
+                        <option value="Otros">Otros</option>
+                    </select>
+                </div>
+            </div>
+
+            <button onclick="saveProduct()" class="w-full bg-apple-blue py-3.5 rounded-xl text-sm font-semibold text-white shadow-lg shadow-apple-blue/30 active:scale-95 transition">
+                Guardar Producto
+            </button>
+        </div>
+    </div>
+
+    <!-- ADD CUSTOMER / FIADO MODAL -->
+    <div id="customer-modal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 hidden flex flex-col justify-end items-center p-0">
+        <div class="bg-apple-card border border-apple-border w-full sm:max-w-md rounded-t-3xl p-6 space-y-4 modal-enter">
+            <div class="flex justify-between items-center">
+                <h3 class="font-bold text-base">Nuevo Cliente (Fiados)</h3>
+                <button onclick="closeCustomerModal()" class="w-8 h-8 rounded-full bg-apple-cardAlt text-apple-gray flex items-center justify-center">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="space-y-3">
+                <div>
+                    <label class="text-xs text-apple-gray block mb-1">Nombre y Apellido</label>
+                    <input type="text" id="cust-name" placeholder="Ej. Juan Pérez" class="w-full bg-apple-cardAlt text-white px-3 py-2.5 rounded-xl border border-apple-border text-sm focus:outline-none focus:border-apple-blue">
+                </div>
+                <div>
+                    <label class="text-xs text-apple-gray block mb-1">Teléfono / WhatsApp</label>
+                    <input type="text" id="cust-phone" placeholder="Ej. 5493854123456" class="w-full bg-apple-cardAlt text-white px-3 py-2.5 rounded-xl border border-apple-border text-sm focus:outline-none focus:border-apple-blue">
+                </div>
+            </div>
+
+            <button onclick="saveCustomer()" class="w-full bg-apple-blue py-3.5 rounded-xl text-sm font-semibold text-white shadow-lg shadow-apple-blue/30 active:scale-95 transition">
+                Registrar Cliente
+            </button>
+        </div>
+    </div>
+
+    <!-- PAY DEBT MODAL -->
+    <div id="pay-debt-modal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 hidden flex flex-col justify-end items-center p-0">
+        <div class="bg-apple-card border border-apple-border w-full sm:max-w-md rounded-t-3xl p-6 space-y-4 modal-enter">
+            <div class="flex justify-between items-center">
+                <h3 class="font-bold text-base">Abonar Cuenta / Fiado</h3>
+                <button onclick="closePayDebtModal()" class="w-8 h-8 rounded-full bg-apple-cardAlt text-apple-gray flex items-center justify-center">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <input type="hidden" id="pay-debt-customer-id">
+
+            <div class="bg-apple-cardAlt p-3.5 rounded-xl border border-apple-border space-y-1">
+                <p class="text-xs text-apple-gray">Cliente:</p>
+                <p class="font-semibold text-sm" id="pay-debt-customer-name">-</p>
+                <p class="text-xs text-apple-gray pt-1">Deuda Actual:</p>
+                <p class="font-bold text-base text-apple-orange" id="pay-debt-customer-total">$0.00</p>
+            </div>
+
+            <div>
+                <label class="text-xs text-apple-gray block mb-1">Monto a Abonar ($ARS)</label>
+                <input type="number" step="0.01" id="pay-debt-amount" placeholder="0.00" class="w-full bg-apple-cardAlt text-white px-3 py-3 rounded-xl border border-apple-border text-base font-bold focus:outline-none focus:border-apple-green">
+            </div>
+
+            <button onclick="confirmPayDebt()" class="w-full bg-apple-green py-3.5 rounded-xl text-sm font-bold text-black shadow-lg shadow-apple-green/30 active:scale-95 transition">
+                Confirmar Abono / Pago
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Default Demo Data
+        const defaultProducts = [
+            { id: '1', barcode: '7791234001', name: 'Coca Cola 1.5L', price: 2200, stock: 35, category: 'Bebidas' },
+            { id: '2', barcode: '7791234002', name: 'Fernet Branca 750ml', price: 9500, stock: 12, category: 'Bebidas' },
+            { id: '3', barcode: '7791234003', name: 'Alfajor Havanna 6u', price: 4200, stock: 20, category: 'Almacén' },
+            { id: '4', barcode: '7791234004', name: 'Papas Lays 150g', price: 1800, stock: 18, category: 'Snacks' },
+            { id: '5', barcode: '7791234005', name: 'Lavandina Ayudín 1L', price: 1300, stock: 15, category: 'Limpieza' },
+            { id: '6', barcode: '7791234006', name: 'Agua Sin Gas 2L', price: 1100, stock: 40, category: 'Bebidas' }
+        ];
+
+        const defaultCustomers = [
+            { id: 'c1', name: 'Carlos Gomez', phone: '5493854111222', debt: 4500, purchases: [
+                { date: '18/09/2026 14:20', items: [{ name: 'Fernet Branca 750ml', qty: 1, price: 9500 }], total: 9500 }
+            ], payments: [
+                { date: '18/09/2026 15:00', amount: 5000 }
+            ]},
+            { id: 'c2', name: 'Mariana Ruiz', phone: '5493854333444', debt: 1200, purchases: [
+                { date: '17/09/2026 10:15', items: [{ name: 'Agua Sin Gas 2L', qty: 1, price: 1100 }, { name: 'Alfajor Havanna 6u', qty: 1, price: 4200 }], total: 5300 }
+            ], payments: [
+                { date: '17/09/2026 12:00', amount: 4100 }
+            ]}
+        ];
+
+        // State variables
+        let products = JSON.parse(localStorage.getItem('pos_products')) || defaultProducts;
+        let customers = JSON.parse(localStorage.getItem('pos_customers')) || defaultCustomers;
+        let salesHistory = JSON.parse(localStorage.getItem('pos_sales')) || [];
+        let settings = JSON.parse(localStorage.getItem('pos_settings')) || {
+            razon: 'Kiosco Don Julio S.A.',
+            cuit: '30-71234567-9',
+            ptovta: '0004',
+            iva: 'Monotributo',
+            inicio: '01/01/2020'
+        };
+
+        let cart = [];
+        let activeCategory = 'Todos';
+        let selectedPaymentMethod = 'Efectivo';
+        let fiadoMode = 'select'; // 'select' or 'new'
+        let html5QrCode = null;
+        let lastGeneratedTicket = null;
+
+        // Initialize App on load
+        window.onload = function() {
+            loadSettingsToUI();
+            renderPOSProducts();
+            renderInventoryList();
+            renderSalesHistory();
+            renderCustomersDebt();
+            updateCartUI();
+        };
+
+        // Quick Add modal alias (opens inventory add product modal)
+        function openQuickAddModal() {
+            openAddProductModal();
+        }
+
+        // Tab Navigation
+        function switchTab(tabId) {
+            document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
+            const targetView = document.getElementById(`view-${tabId}`);
+            if (targetView) targetView.classList.remove('hidden');
+
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('text-apple-blue');
+                btn.classList.add('text-apple-gray');
+            });
+            const targetNav = document.getElementById(`nav-${tabId}`);
+            if (targetNav) {
+                targetNav.classList.add('text-apple-blue');
+                targetNav.classList.remove('text-apple-gray');
+            }
+
+            const mainContainer = document.getElementById('main-container');
+            if (mainContainer) mainContainer.scrollTop = 0;
+        }
+
+        // Save to LocalStorage
+        function persistData() {
+            localStorage.setItem('pos_products', JSON.stringify(products));
+            localStorage.setItem('pos_customers', JSON.stringify(customers));
+            localStorage.setItem('pos_sales', JSON.stringify(salesHistory));
+            localStorage.setItem('pos_settings', JSON.stringify(settings));
+        }
+
+        // --- POS CHECKOUT LOGIC ---
+        function selectCategory(cat) {
+            activeCategory = cat;
+            document.querySelectorAll('.cat-pill').forEach(btn => {
+                if(btn.innerText === cat) {
+                    btn.className = "cat-pill px-4 py-1.5 rounded-full text-xs font-medium bg-apple-blue text-white whitespace-nowrap transition";
+                } else {
+                    btn.className = "cat-pill px-4 py-1.5 rounded-full text-xs font-medium bg-apple-card text-apple-gray border border-apple-border whitespace-nowrap transition";
+                }
+            });
+            renderPOSProducts();
+        }
+
+        function filterPOSProducts() {
+            renderPOSProducts();
+        }
+
+        function renderPOSProducts() {
+            const searchInput = document.getElementById('pos-search');
+            const query = searchInput ? searchInput.value.toLowerCase() : '';
+            const grid = document.getElementById('pos-product-grid');
+            if (!grid) return;
+            grid.innerHTML = '';
+
+            const filtered = products.filter(p => {
+                const matchCat = activeCategory === 'Todos' || p.category === activeCategory;
+                const matchQuery = p.name.toLowerCase().includes(query) || p.barcode.includes(query);
+                return matchCat && matchQuery;
+            });
+
+            if (filtered.length === 0) {
+                grid.innerHTML = `<div class="col-span-2 text-center py-10 text-apple-gray text-xs">No se encontraron productos</div>`;
+                return;
+            }
+
+            filtered.forEach(p => {
+                const div = document.createElement('div');
+                div.className = "bg-apple-card border border-apple-border p-3.5 rounded-2xl flex flex-col justify-between active:scale-95 transition cursor-pointer";
+                div.onclick = () => addToCart(p.id);
+                div.innerHTML = `
+                    <div>
+                        <div class="flex justify-between items-start mb-1">
+                            <span class="text-[10px] px-2 py-0.5 bg-apple-cardAlt rounded-md text-apple-gray">${p.category}</span>
+                            <span class="text-[10px] ${p.stock > 5 ? 'text-apple-green' : 'text-apple-orange font-bold'}">Stock: ${p.stock}</span>
+                        </div>
+                        <h4 class="font-semibold text-sm line-clamp-2 mt-1">${p.name}</h4>
+                    </div>
+                    <div class="flex justify-between items-center mt-3 pt-2 border-t border-apple-border/60">
+                        <span class="text-sm font-bold text-apple-green">$${p.price.toLocaleString()}</span>
+                        <div class="w-7 h-7 rounded-full bg-apple-blue/20 text-apple-blue flex items-center justify-center text-xs">
+                            <i class="fa-solid fa-plus"></i>
+                        </div>
+                    </div>
+                `;
+                grid.appendChild(div);
+            });
+        }
+
+        function addToCart(productId) {
+            const product = products.find(p => p.id === productId);
+            if (!product) return;
+            if (product.stock <= 0) {
+                showToast(`¡Sin stock disponible para ${product.name}!`, 'error');
+                return;
+            }
+
+            const existing = cart.find(item => item.id === productId);
+            if (existing) {
+                if (existing.qty < product.stock) {
+                    existing.qty++;
+                } else {
+                    showToast('Stock máximo alcanzado', 'error');
+                    return;
+                }
+            } else {
+                cart.push({ ...product, qty: 1 });
+            }
+            updateCartUI();
+        }
+
+        function updateCartUI() {
+            const list = document.getElementById('cart-items-list');
+            const badge = document.getElementById('cart-badge');
+            const countLabel = document.getElementById('cart-items-count');
+            const totalDisplay = document.getElementById('cart-total-display');
+
+            const totalItems = cart.reduce((sum, i) => sum + i.qty, 0);
+            const totalPrice = cart.reduce((sum, i) => sum + (i.price * i.qty), 0);
+
+            if (badge) badge.innerText = totalItems;
+            if (countLabel) countLabel.innerText = `${totalItems} ítem${totalItems === 1 ? '' : 's'}`;
+            if (totalDisplay) totalDisplay.innerText = `$${totalPrice.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+
+            if (!list) return;
+            if (cart.length === 0) {
+                list.innerHTML = `<p class="text-apple-gray text-center py-2">El carrito está vacío</p>`;
+                return;
+            }
+
+            list.innerHTML = '';
+            cart.forEach((item, index) => {
+                const row = document.createElement('div');
+                row.className = "flex justify-between items-center py-1.5";
+                row.innerHTML = `
+                    <div class="flex-1 pr-2">
+                        <p class="font-medium truncate">${item.name}</p>
+                        <p class="text-[10px] text-apple-gray">$${item.price.toLocaleString()} c/u</p>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <div class="flex items-center space-x-1 bg-apple-cardAlt px-2 py-0.5 rounded-lg border border-apple-border">
+                            <button onclick="updateCartQty(${index}, -1)" class="text-apple-gray px-1">-</button>
+                            <span class="font-bold text-xs">${item.qty}</span>
+                            <button onclick="updateCartQty(${index}, 1)" class="text-apple-blue px-1">+</button>
+                        </div>
+                        <span class="font-semibold text-apple-green w-16 text-right">$${(item.price * item.qty).toLocaleString()}</span>
+                    </div>
+                `;
+                list.appendChild(row);
+            });
+        }
+
+        function updateCartQty(index, change) {
+            cart[index].qty += change;
+            if (cart[index].qty <= 0) {
+                cart.splice(index, 1);
+            }
+            updateCartUI();
+        }
+
+        function clearCart() {
+            cart = [];
+            updateCartUI();
+        }
+
+        // --- CHECKOUT & ARCA TICKET GENERATION ---
+        function openCheckoutModal() {
+            if (cart.length === 0) {
+                showToast('El carrito está vacío', 'error');
+                return;
+            }
+
+            const subtotal = cart.reduce((sum, i) => sum + (i.price * i.qty), 0);
+            const iva = subtotal * 0.21;
+            const total = subtotal;
+
+            const chkSub = document.getElementById('chk-subtotal');
+            const chkIva = document.getElementById('chk-iva');
+            const chkTot = document.getElementById('chk-total');
+            if (chkSub) chkSub.innerText = `$${subtotal.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
+            if (chkIva) chkIva.innerText = `$${iva.toLocaleString(undefined, {minimumFractionDigits: 2})} (21%)`;
+            if (chkTot) chkTot.innerText = `$${total.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
+
+            // Default to Efectivo
+            setPaymentMethod('Efectivo');
+
+            const select = document.getElementById('chk-customer');
+            if (select) {
+                select.innerHTML = `<option value="">-- Seleccione Cliente --</option>`;
+                customers.forEach(c => {
+                    select.innerHTML += `<option value="${c.id}">${c.name} (Deuda actual: $${c.debt.toLocaleString()})</option>`;
+                });
+            }
+
+            const modal = document.getElementById('checkout-modal');
+            if (modal) modal.classList.remove('hidden');
+        }
+
+        function closeCheckoutModal() {
+            const modal = document.getElementById('checkout-modal');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        function setPaymentMethod(method) {
+            selectedPaymentMethod = method;
+            document.querySelectorAll('.pay-btn').forEach(btn => {
+                btn.className = "pay-btn bg-apple-cardAlt text-apple-gray py-3 rounded-xl text-xs font-semibold border border-apple-border transition flex flex-col items-center justify-center space-y-1";
+            });
+            const activeBtn = method === 'Efectivo' ? 'pay-efectivo' : method === 'Tarjeta' ? 'pay-tarjeta' : method === 'QR / Transferencia' ? 'pay-qr' : 'pay-fiado';
+            const btnEl = document.getElementById(activeBtn);
+            if (btnEl) {
+                btnEl.className = "pay-btn bg-apple-blue text-white py-3 rounded-xl text-xs font-semibold border border-apple-blue transition flex flex-col items-center justify-center space-y-1 shadow-lg shadow-apple-blue/30";
+            }
+
+            const custContainer = document.getElementById('customer-select-container');
+            if (custContainer) {
+                if (method === 'Fiado') {
+                    custContainer.classList.remove('hidden');
+                } else {
+                    custContainer.classList.add('hidden');
+                }
+            }
+        }
+
+        function toggleFiadoMode(mode) {
+            fiadoMode = mode;
+            const selectBox = document.getElementById('fiado-mode-select-box');
+            const newBox = document.getElementById('fiado-mode-new-box');
+            const btnSelect = document.getElementById('btn-mode-select');
+            const btnNew = document.getElementById('btn-mode-new');
+
+            if (mode === 'select') {
+                if (selectBox) selectBox.classList.remove('hidden');
+                if (newBox) newBox.classList.add('hidden');
+                if (btnSelect) { btnSelect.className = "text-[10px] px-2 py-0.5 rounded-lg bg-apple-blue text-white font-medium"; }
+                if (btnNew) { btnNew.className = "text-[10px] px-2 py-0.5 rounded-lg bg-apple-cardAlt text-apple-gray font-medium"; }
+            } else {
+                if (selectBox) selectBox.classList.add('hidden');
+                if (newBox) { newBox.classList.remove('hidden'); }
+                if (btnSelect) { btnSelect.className = "text-[10px] px-2 py-0.5 rounded-lg bg-apple-cardAlt text-apple-gray font-medium"; }
+                if (btnNew) { btnNew.className = "text-[10px] px-2 py-0.5 rounded-lg bg-apple-blue text-white font-medium"; }
+            }
+        }
+
+        function processCheckout() {
+            const subtotal = cart.reduce((sum, i) => sum + (i.price * i.qty), 0);
+            const iva = subtotal * 0.21;
+            const total = subtotal;
+
+            let customerId = '';
+            let targetCustomer = null;
+
+            if (selectedPaymentMethod === 'Fiado') {
+                if (fiadoMode === 'select') {
+                    const customerEl = document.getElementById('chk-customer');
+                    customerId = customerEl ? customerEl.value : '';
+                    if (!customerId) {
+                        showToast('Debe seleccionar un cliente para el fiado', 'error');
+                        return;
+                    }
+                    targetCustomer = customers.find(c => c.id === customerId);
+                } else {
+                    const newName = document.getElementById('chk-new-cust-name').value.trim();
+                    const newPhone = document.getElementById('chk-new-cust-phone').value.trim();
+                    if (!newName) {
+                        showToast('Ingrese el nombre del nuevo cliente', 'error');
+                        return;
+                    }
+                    const newCust = {
+                        id: 'c-' + Date.now(),
+                        name: newName,
+                        phone: newPhone || '5493854123456',
+                        debt: 0,
+                        purchases: [],
+                        payments: []
+                    };
+                    customers.push(newCust);
+                    customerId = newCust.id;
+                    targetCustomer = newCust;
+                }
+            }
+
+            const compNro = Math.floor(10000000 + Math.random() * 90000000);
+            const cae = Math.floor(70000000000000 + Math.random() * 9000000000000);
+            const nowFormatted = new Date().toLocaleString();
+
+            cart.forEach(cartItem => {
+                const prod = products.find(p => p.id === cartItem.id);
+                if (prod) {
+                    prod.stock = Math.max(0, prod.stock - cartItem.qty);
+                }
+            });
+
+            if (selectedPaymentMethod === 'Fiado' && targetCustomer) {
+                targetCustomer.debt += total;
+                if (!targetCustomer.purchases) targetCustomer.purchases = [];
+                targetCustomer.purchases.unshift({
+                    date: nowFormatted,
+                    items: cart.map(i => ({ name: i.name, qty: i.qty, price: i.price })),
+                    total: total
+                });
+            }
+
+            const saleRecord = {
+                id: 'V-' + Date.now(),
+                date: nowFormatted,
+                items: [...cart],
+                subtotal,
+                iva,
+                total,
+                paymentMethod: selectedPaymentMethod === 'Fiado' ? `Fiado (${targetCustomer ? targetCustomer.name : 'Cuenta'})` : selectedPaymentMethod,
+                customerId: selectedPaymentMethod === 'Fiado' ? customerId : '',
+                compNro,
+                cae
+            };
+
+            salesHistory.unshift(saleRecord);
+            persistData();
+
+            lastGeneratedTicket = saleRecord;
+            clearCart();
+            closeCheckoutModal();
+
+            renderPOSProducts();
+            renderInventoryList();
+            renderSalesHistory();
+            renderCustomersDebt();
+
+            openTicketModal(saleRecord);
+        }
+
+        // --- TICKET & ARCA MODAL ---
+        function openTicketModal(sale) {
+            const setRazon = document.getElementById('ticket-razon');
+            const setCuit = document.getElementById('ticket-cuit');
+            const setPtoVta = document.getElementById('ticket-ptovta');
+            const setNro = document.getElementById('ticket-nro');
+            const setFecha = document.getElementById('ticket-fecha');
+            const setSub = document.getElementById('ticket-subtotal');
+            const setIva = document.getElementById('ticket-iva');
+            const setTot = document.getElementById('ticket-total');
+            const setCae = document.getElementById('ticket-cae');
+
+            if (setRazon) setRazon.innerText = settings.razon;
+            if (setCuit) setCuit.innerText = settings.cuit;
+            if (setPtoVta) setPtoVta.innerText = settings.ptovta;
+            if (setNro) setNro.innerText = String(sale.compNro).padStart(8, '0');
+            if (setFecha) setFecha.innerText = sale.date;
+            if (setSub) setSub.innerText = `$${sale.subtotal.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
+            if (setIva) setIva.innerText = `$${sale.iva.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
+            if (setTot) setTot.innerText = `$${sale.total.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
+            if (setCae) setCae.innerText = `CAE N°: ${sale.cae}`;
+
+            const container = document.getElementById('ticket-items-container');
+            if (container) {
+                container.innerHTML = '';
+                sale.items.forEach(i => {
+                    const div = document.createElement('div');
+                    div.className = "flex justify-between items-center py-1";
+                    div.innerHTML = `
+                        <span>${i.qty}x ${i.name}</span>
+                        <span class="font-medium">$${(i.price * i.qty).toLocaleString()}</span>
+                    `;
+                    container.appendChild(div);
+                });
+            }
+
+            const qrContainer = document.getElementById('qrcode-container');
+            if (qrContainer) {
+                qrContainer.innerHTML = '';
+                const qrData = `https://www.afip.gob.ar/fe/qr/?p=CUIT:${settings.cuit}|PtoVta:${settings.ptovta}|TipoCmp:11|NroCmp:${sale.compNro}|Importe:${sale.total}|Mon=ARS|Cae:${sale.cae}`;
+                new QRCode(qrContainer, {
+                    text: qrData,
+                    width: 120,
+                    height: 120,
+                    colorDark : "#000000",
+                    colorLight : "#ffffff",
+                    correctLevel : QRCode.CorrectLevel.H
+                });
+            }
+
+            const ticketModal = document.getElementById('ticket-modal');
+            if (ticketModal) ticketModal.classList.remove('hidden');
+        }
+
+        function closeTicketModal() {
+            const ticketModal = document.getElementById('ticket-modal');
+            if (ticketModal) ticketModal.classList.add('hidden');
+        }
+
+        function shareWhatsApp() {
+            if (!lastGeneratedTicket) return;
+            const t = lastGeneratedTicket;
+            let text = `*COMPROBANTE ELECTRÓNICO ARCA*\n`;
+            text += `*${settings.razon}* (CUIT: ${settings.cuit})\n`;
+            text += `Factura C N° ${String(t.compNro).padStart(8, '0')}\n`;
+            text += `Fecha: ${t.date}\n\n`;
+            text += `*DETALLE:*\n`;
+            t.items.forEach(i => {
+                text += `• ${i.qty}x ${i.name} ($${(i.price * i.qty).toLocaleString()})\n`;
+            });
+            text += `\n*TOTAL:* $${t.total.toLocaleString()}\n`;
+            text += `CAE: ${t.cae}\n`;
+            text += `_¡Gracias por su compra!_`;
+
+            const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+            window.open(url, '_blank');
+        }
+
+        // --- INVENTORY MANAGEMENT ---
+        function renderInventoryList() {
+            const searchInput = document.getElementById('inventory-search');
+            const query = searchInput ? searchInput.value.toLowerCase() : '';
+            const list = document.getElementById('inventory-list');
+            if (!list) return;
+            list.innerHTML = '';
+
+            const filtered = products.filter(p => p.name.toLowerCase().includes(query) || p.barcode.includes(query) || p.category.toLowerCase().includes(query));
+
+            if (filtered.length === 0) {
+                list.innerHTML = `<div class="text-center py-10 text-apple-gray text-xs">No hay productos en inventario</div>`;
+                return;
+            }
+
+            filtered.forEach(p => {
+                const card = document.createElement('div');
+                card.className = "bg-apple-card border border-apple-border p-3.5 rounded-2xl flex justify-between items-center";
+                card.innerHTML = `
+                    <div class="space-y-1 flex-1 pr-2">
+                        <div class="flex items-center space-x-2">
+                            <span class="text-[10px] px-2 py-0.5 bg-apple-cardAlt rounded-md text-apple-gray">${p.category}</span>
+                            <span class="text-[10px] text-apple-gray font-mono">#${p.barcode}</span>
+                        </div>
+                        <h4 class="font-semibold text-sm">${p.name}</h4>
+                        <div class="flex space-x-3 text-xs">
+                            <span class="text-apple-green font-bold">$${p.price.toLocaleString()}</span>
+                            <span class="${p.stock > 5 ? 'text-apple-gray' : 'text-apple-orange font-bold'}">Stock: ${p.stock} un.</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <button onclick="openEditProductModal('${p.id}')" class="w-9 h-9 rounded-xl bg-apple-cardAlt border border-apple-border text-apple-blue flex items-center justify-center active:scale-95 transition">
+                            <i class="fa-solid fa-pen text-xs"></i>
+                        </button>
+                        <button onclick="deleteProduct('${p.id}')" class="w-9 h-9 rounded-xl bg-apple-cardAlt border border-apple-border text-apple-red flex items-center justify-center active:scale-95 transition">
+                            <i class="fa-solid fa-trash text-xs"></i>
+                        </button>
+                    </div>
+                `;
+                list.appendChild(card);
+            });
+        }
+
+        function openAddProductModal() {
+            const titleEl = document.getElementById('product-modal-title');
+            const idEl = document.getElementById('prod-edit-id');
+            const barcodeEl = document.getElementById('prod-barcode');
+            const nameEl = document.getElementById('prod-name');
+            const priceEl = document.getElementById('prod-price');
+            const stockEl = document.getElementById('prod-stock');
+            const modalEl = document.getElementById('product-modal');
+
+            if (titleEl) titleEl.innerText = 'Nuevo Producto';
+            if (idEl) idEl.value = '';
+            if (barcodeEl) barcodeEl.value = '779' + Math.floor(1000000 + Math.random() * 9000000);
+            if (nameEl) nameEl.value = '';
+            if (priceEl) priceEl.value = '';
+            if (stockEl) stockEl.value = '10';
+            if (modalEl) modalEl.classList.remove('hidden');
+        }
+
+        function openEditProductModal(id) {
+            const p = products.find(prod => prod.id === id);
+            if (!p) return;
+            const titleEl = document.getElementById('product-modal-title');
+            const idEl = document.getElementById('prod-edit-id');
+            const barcodeEl = document.getElementById('prod-barcode');
+            const nameEl = document.getElementById('prod-name');
+            const priceEl = document.getElementById('prod-price');
+            const stockEl = document.getElementById('prod-stock');
+            const catEl = document.getElementById('prod-category');
+            const modalEl = document.getElementById('product-modal');
+
+            if (titleEl) titleEl.innerText = 'Editar Producto';
+            if (idEl) idEl.value = p.id;
+            if (barcodeEl) barcodeEl.value = p.barcode;
+            if (nameEl) nameEl.value = p.name;
+            if (priceEl) priceEl.value = p.price;
+            if (stockEl) stockEl.value = p.stock;
+            if (catEl) catEl.value = p.category;
+            if (modalEl) modalEl.classList.remove('hidden');
+        }
+
+        function closeProductModal() {
+            const modalEl = document.getElementById('product-modal');
+            if (modalEl) modalEl.classList.add('hidden');
+        }
+
+        function generateRandomBarcode() {
+            const barcodeEl = document.getElementById('prod-barcode');
+            if (barcodeEl) {
+                barcodeEl.value = '779' + Math.floor(1000000 + Math.random() * 9000000);
+            }
+        }
+
+        function saveProduct() {
+            const id = document.getElementById('prod-edit-id').value;
+            const barcode = document.getElementById('prod-barcode').value.trim();
+            const name = document.getElementById('prod-name').value.trim();
+            const price = parseFloat(document.getElementById('prod-price').value);
+            const stock = parseInt(document.getElementById('prod-stock').value);
+            const category = document.getElementById('prod-category').value;
+
+            if (!name || isNaN(price) || isNaN(stock)) {
+                showToast('Por favor completa todos los campos correctamente', 'error');
+                return;
+            }
+
+            if (id) {
+                const p = products.find(prod => prod.id === id);
+                if (p) {
+                    p.barcode = barcode;
+                    p.name = name;
+                    p.price = price;
+                    p.stock = stock;
+                    p.category = category;
+                }
+            } else {
+                const newP = {
+                    id: 'p-' + Date.now(),
+                    barcode: barcode || ('779' + Math.floor(1000000 + Math.random() * 9000000)),
+                    name,
+                    price,
+                    stock,
+                    category
+                };
+                products.push(newP);
+            }
+
+            persistData();
+            closeProductModal();
+            renderPOSProducts();
+            renderInventoryList();
+            showToast('Producto guardado exitosamente');
+        }
+
+        function deleteProduct(id) {
+            if (window.confirm('¿Eliminar este producto del inventario?')) {
+                products = products.filter(p => p.id !== id);
+                persistData();
+                renderPOSProducts();
+                renderInventoryList();
+                showToast('Producto eliminado');
+            }
+        }
+
+        // --- SALES HISTORY ---
+        function renderSalesHistory() {
+            const list = document.getElementById('sales-history-list');
+            if (!list) return;
+            list.innerHTML = '';
+
+            const dailyTotal = salesHistory.reduce((sum, s) => sum + s.total, 0);
+            const dailyTotEl = document.getElementById('stats-daily-total');
+            const dailyCntEl = document.getElementById('stats-daily-count');
+            if (dailyTotEl) dailyTotEl.innerText = `$${dailyTotal.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
+            if (dailyCntEl) dailyCntEl.innerText = salesHistory.length;
+
+            if (salesHistory.length === 0) {
+                list.innerHTML = `<div class="text-center py-10 text-apple-gray text-xs">No hay ventas registradas aún</div>`;
+                return;
+            }
+
+            salesHistory.forEach(sale => {
+                const card = document.createElement('div');
+                card.className = "bg-apple-card border border-apple-border p-4 rounded-2xl space-y-2.5";
+                card.innerHTML = `
+                    <div class="flex justify-between items-center text-xs">
+                        <span class="text-apple-blue font-semibold">Factura C #${String(sale.compNro).padStart(8, '0')}</span>
+                        <span class="text-apple-gray">${sale.date}</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <p class="font-bold text-sm text-apple-green">$${sale.total.toLocaleString()}</p>
+                            <p class="text-[10px] text-apple-gray">${sale.paymentMethod} • ${sale.items.length} ítems</p>
+                        </div>
+                        <button onclick="reprintTicket('${sale.id}')" class="bg-apple-cardAlt border border-apple-border px-3 py-1.5 rounded-xl text-xs font-semibold text-white active:scale-95 transition">
+                            <i class="fa-solid fa-receipt mr-1"></i> Ver Ticket
+                        </button>
+                    </div>
+                `;
+                list.appendChild(card);
+            });
+        }
+
+        function reprintTicket(id) {
+            const sale = salesHistory.find(s => s.id === id);
+            if (sale) {
+                lastGeneratedTicket = sale;
+                openTicketModal(sale);
+            }
+        }
+
+        function exportSalesCSV() {
+            if (salesHistory.length === 0) {
+                showToast('No hay ventas para exportar', 'error');
+                return;
+            }
+            let csv = 'ID,Fecha,CompNro,Total,MetodoPago,CAE\n';
+            salesHistory.forEach(s => {
+                csv += `${s.id},"${s.date}",${s.compNro},${s.total},"${s.paymentMethod}",${s.cae}\n`;
+            });
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Ventas_ARCA_${new Date().toISOString().slice(0,10)}.csv`;
+            a.click();
+        }
+
+        // --- DEBTS / FIADOS ---
+        function renderCustomersDebt() {
+            const list = document.getElementById('customers-debt-list');
+            const searchInput = document.getElementById('fiados-search');
+            const query = searchInput ? searchInput.value.toLowerCase() : '';
+            if (!list) return;
+            list.innerHTML = '';
+
+            const totalDebt = customers.reduce((sum, c) => sum + c.debt, 0);
+            const totalDebtEl = document.getElementById('total-debt-display');
+            if (totalDebtEl) totalDebtEl.innerText = `$${totalDebt.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
+
+            const filteredCustomers = customers.filter(c => c.name.toLowerCase().includes(query) || c.phone.includes(query));
+
+            if (filteredCustomers.length === 0) {
+                list.innerHTML = `<div class="text-center py-10 text-apple-gray text-xs">No se encontraron clientes con cuentas corrientes</div>`;
+                return;
+            }
+
+            filteredCustomers.forEach(c => {
+                const card = document.createElement('div');
+                card.className = "bg-apple-card border border-apple-border p-4 rounded-2xl space-y-3";
+                
+                let purchasesHTML = '';
+                if (c.purchases && c.purchases.length > 0) {
+                    purchasesHTML = `<div class="mt-2 pt-2 border-t border-apple-border/60 space-y-2"><p class="text-[10px] uppercase font-semibold text-apple-gray">Detalle de artículos llevados:</p>`;
+                    c.purchases.forEach(p => {
+                        purchasesHTML += `
+                            <div class="bg-apple-cardAlt p-2.5 rounded-xl border border-apple-border/40 text-xs space-y-1">
+                                <div class="flex justify-between text-[10px] text-apple-gray">
+                                    <span><i class="fa-regular fa-clock mr-1"></i>${p.date}</span>
+                                    <span class="font-bold text-apple-orange">Fiado: $${p.total.toLocaleString()}</span>
+                                </div>
+                                <div class="space-y-0.5">
+                                    ${p.items.map(i => `<div class="flex justify-between text-white text-[11px]"><span>• ${i.qty}x ${i.name}</span><span class="text-apple-gray">$${(i.price * i.qty).toLocaleString()}</span></div>`).join('')}
+                                </div>
+                            </div>
+                        `;
+                    });
+                    purchasesHTML += `</div>`;
+                }
+
+                let paymentsHTML = '';
+                if (c.payments && c.payments.length > 0) {
+                    paymentsHTML = `<div class="mt-2 pt-2 border-t border-apple-border/60 space-y-2"><p class="text-[10px] uppercase font-semibold text-apple-green">Historial de Pagos / Abonos:</p>`;
+                    c.payments.forEach(pay => {
+                        paymentsHTML += `
+                            <div class="bg-apple-green/10 p-2 rounded-xl border border-apple-green/20 text-xs flex justify-between items-center">
+                                <span class="text-[10px] text-apple-gray"><i class="fa-regular fa-clock mr-1"></i>${pay.date}</span>
+                                <span class="font-bold text-apple-green">+ Abono: $${pay.amount.toLocaleString()}</span>
+                            </div>
+                        `;
+                    });
+                    paymentsHTML += `</div>`;
+                }
+
+                card.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <div class="space-y-1">
+                            <h4 class="font-semibold text-sm">${c.name}</h4>
+                            <p class="text-xs text-apple-gray"><i class="fa-solid fa-phone mr-1"></i> ${c.phone}</p>
+                            <p class="text-xs font-bold text-apple-orange mt-1">Deuda Pendiente: $${c.debt.toLocaleString()}</p>
+                        </div>
+                        <div class="flex flex-col space-y-2">
+                            <button onclick="payDebt('${c.id}')" class="bg-apple-green/20 text-apple-green border border-apple-green/30 px-3 py-1.5 rounded-xl text-xs font-semibold active:scale-95 transition">
+                                Abonar
+                            </button>
+                            <button onclick="remindWhatsApp('${c.id}')" class="bg-[#25D366]/20 text-[#25D366] border border-[#25D366]/30 px-3 py-1.5 rounded-xl text-xs font-semibold active:scale-95 transition flex items-center justify-center">
+                                <i class="fa-brands fa-whatsapp"></i>
+                            </button>
+                        </div>
+                    </div>
+                    ${purchasesHTML}
+                    ${paymentsHTML}
+                `;
+                list.appendChild(card);
+            });
+        }
+
+        function openAddCustomerModal() {
+            const nameEl = document.getElementById('cust-name');
+            const phoneEl = document.getElementById('cust-phone');
+            const modalEl = document.getElementById('customer-modal');
+            if (nameEl) nameEl.value = '';
+            if (phoneEl) phoneEl.value = '';
+            if (modalEl) modalEl.classList.remove('hidden');
+        }
+
+        function closeCustomerModal() {
+            const modalEl = document.getElementById('customer-modal');
+            if (modalEl) modalEl.classList.add('hidden');
+        }
+
+        function saveCustomer() {
+            const name = document.getElementById('cust-name').value.trim();
+            const phone = document.getElementById('cust-phone').value.trim();
+            if (!name) {
+                showToast('Ingresa el nombre del cliente', 'error');
+                return;
+            }
+            customers.push({
+                id: 'c-' + Date.now(),
+                name,
+                phone: phone || '5493854000000',
+                debt: 0,
+                purchases: [],
+                payments: []
+            });
+            persistData();
+            closeCustomerModal();
+            renderCustomersDebt();
+            showToast('Cliente registrado');
+        }
+
+        function payDebt(id) {
+            const c = customers.find(cust => cust.id === id);
+            if (!c) return;
+            if (c.debt <= 0) {
+                showToast('El cliente no tiene deuda pendiente', 'error');
+                return;
+            }
+
+            const modal = document.getElementById('pay-debt-modal');
+            const idInput = document.getElementById('pay-debt-customer-id');
+            const nameEl = document.getElementById('pay-debt-customer-name');
+            const totalEl = document.getElementById('pay-debt-customer-total');
+            const amountInput = document.getElementById('pay-debt-amount');
+
+            if (idInput) idInput.value = c.id;
+            if (nameEl) nameEl.innerText = c.name;
+            if (totalEl) totalEl.innerText = `$${c.debt.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
+            if (amountInput) amountInput.value = c.debt;
+
+            if (modal) modal.classList.remove('hidden');
+        }
+
+        function closePayDebtModal() {
+            const modal = document.getElementById('pay-debt-modal');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        function confirmPayDebt() {
+            const customerId = document.getElementById('pay-debt-customer-id').value;
+            const amountInput = document.getElementById('pay-debt-amount').value;
+            const amount = parseFloat(amountInput);
+
+            if (isNaN(amount) || amount <= 0) {
+                showToast('Ingrese un monto válido', 'error');
+                return;
+            }
+
+            const c = customers.find(cust => cust.id === customerId);
+            if (!c) return;
+
+            if (amount > c.debt) {
+                showToast('El monto ingresado supera la deuda actual', 'error');
+                return;
+            }
+
+            c.debt = Math.max(0, c.debt - amount);
+            if (!c.payments) c.payments = [];
+            
+            const paymentRecord = {
+                date: new Date().toLocaleString(),
+                amount: amount
+            };
+            c.payments.unshift(paymentRecord);
+
+            const compNro = Math.floor(10000000 + Math.random() * 90000000);
+            const cae = Math.floor(70000000000000 + Math.random() * 9000000000000);
+            const paymentSaleRecord = {
+                id: 'V-PAY-' + Date.now(),
+                date: paymentRecord.date,
+                items: [{ name: `Pago de Fiado / Cuenta - ${c.name}`, qty: 1, price: amount }],
+                subtotal: amount,
+                iva: 0,
+                total: amount,
+                paymentMethod: `Cobro de Fiado (${c.name})`,
+                customerId: customerId,
+                compNro,
+                cae
+            };
+            salesHistory.unshift(paymentSaleRecord);
+
+            // If debt is fully paid off, remove customer from active debts list
+            if (c.debt <= 0) {
+                customers = customers.filter(cust => cust.id !== customerId);
+                showToast(`¡Deuda saldada por completo! Cliente dado de alta.`);
+            } else {
+                showToast(`Abono registrado con éxito: $${amount.toLocaleString()}`);
+            }
+
+            persistData();
+            closePayDebtModal();
+            renderCustomersDebt();
+            renderSalesHistory();
+        }
+
+        function remindWhatsApp(id) {
+            const c = customers.find(cust => cust.id === id);
+            if (!c) return;
+            const text = `Hola ${c.name}! Te escribimos de ${settings.razon} para recordarte que tenés un saldo pendiente en tu cuenta corriente por un total de *$${c.debt.toLocaleString()}*. ¡Gracias!`;
+            window.open(`https://api.whatsapp.com/send?phone=${c.phone}&text=${encodeURIComponent(text)}`, '_blank');
+        }
+
+        // --- SETTINGS & ARCA ---
+        function loadSettingsToUI() {
+            const razonEl = document.getElementById('set-razon');
+            const cuitEl = document.getElementById('set-cuit');
+            const ptovtaEl = document.getElementById('set-ptovta');
+            const ivaEl = document.getElementById('set-iva');
+            const inicioEl = document.getElementById('set-inicio');
+            const subtitleEl = document.getElementById('store-subtitle');
+
+            if (razonEl) razonEl.value = settings.razon;
+            if (cuitEl) cuitEl.value = settings.cuit;
+            if (ptovtaEl) ptovtaEl.value = settings.ptovta;
+            if (ivaEl) ivaEl.value = settings.iva;
+            if (inicioEl) inicioEl.value = settings.inicio;
+            if (subtitleEl) subtitleEl.innerText = `${settings.iva} • Pto. Vta ${settings.ptovta}`;
+        }
+
+        function saveSettings() {
+            const razonEl = document.getElementById('set-razon');
+            const cuitEl = document.getElementById('set-cuit');
+            const ptovtaEl = document.getElementById('set-ptovta');
+            const ivaEl = document.getElementById('set-iva');
+            const inicioEl = document.getElementById('set-inicio');
+
+            if (razonEl) settings.razon = razonEl.value.trim();
+            if (cuitEl) settings.cuit = cuitEl.value.trim();
+            if (ptovtaEl) settings.ptovta = ptovtaEl.value.trim();
+            if (ivaEl) settings.iva = ivaEl.value;
+            if (inicioEl) settings.inicio = inicioEl.value.trim();
+
+            persistData();
+            loadSettingsToUI();
+            showToast('Configuración ARCA guardada');
+        }
+
+        function resetDemoData() {
+            if (window.confirm('¿Restaurar datos de demostración iniciales? Se perderán cambios actuales.')) {
+                localStorage.clear();
+                window.location.reload();
+            }
+        }
+
+        function exportAllDataJSON() {
+            const backup = { products, customers, salesHistory, settings };
+            const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `POS_Backup_${new Date().toISOString().slice(0,10)}.json`;
+            a.click();
+        }
+
+        // --- BARCODE SCANNER INTEGRATION (html5-qrcode) ---
+        function openScannerModal() {
+            const modal = document.getElementById('scanner-modal');
+            if (modal) modal.classList.remove('hidden');
+            setTimeout(() => {
+                if (!html5QrCode) {
+                    html5QrCode = new Html5Qrcode("reader");
+                }
+                html5QrCode.start(
+                    { facingMode: "environment" },
+                    { fps: 10, qrbox: { width: 250, height: 150 } },
+                    (decodedText, decodedResult) => {
+                        handleScannedCode(decodedText);
+                        closeScannerModal();
+                    },
+                    (errorMessage) => {
+                        // scanning frame errors ignored
+                    }
+                ).catch(err => {
+                    console.error("Error starting camera scanner:", err);
+                    showToast("No se pudo iniciar la cámara", 'error');
+                });
+            }, 300);
+        }
+
+        function closeScannerModal() {
+            if (html5QrCode && html5QrCode.isScanning) {
+                html5QrCode.stop().then(() => {
+                    const modal = document.getElementById('scanner-modal');
+                    if (modal) modal.classList.add('hidden');
+                }).catch(err => {
+                    const modal = document.getElementById('scanner-modal');
+                    if (modal) modal.classList.add('hidden');
+                });
+            } else {
+                const modal = document.getElementById('scanner-modal');
+                if (modal) modal.classList.add('hidden');
+            }
+        }
+
+        function handleScannedCode(code) {
+            const product = products.find(p => p.barcode === code);
+            if (product) {
+                addToCart(product.id);
+                showToast(`Agregado: ${product.name}`);
+            } else {
+                showToast(`Código no encontrado: ${code}`, 'error');
+                if (window.confirm(`El código ${code} no existe en stock. ¿Desea agregarlo como nuevo producto?`)) {
+                    openAddProductModal();
+                    const barcodeField = document.getElementById('prod-barcode');
+                    if (barcodeField) barcodeField.value = code;
+                }
+            }
+        }
+
+        // Custom Toast Notification
+        function showToast(message, type = 'success') {
+            const existing = document.getElementById('toast-notification');
+            if (existing) existing.remove();
+
+            const toast = document.createElement('div');
+            toast.id = 'toast-notification';
+            toast.className = `fixed top-12 left-1/2 transform -translate-x-1/2 z-50 px-4 py-2.5 rounded-2xl text-xs font-semibold shadow-2xl modal-enter ${
+                type === 'error' ? 'bg-apple-red text-white' : 'bg-apple-cardAlt border border-apple-border text-white'
+            }`;
+            toast.innerHTML = `<div class="flex items-center space-x-2"><i class="fa-solid ${type === 'error' ? 'fa-circle-exclamation text-white' : 'fa-circle-check text-apple-green'}"></i><span>${message}</span></div>`;
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transition = 'opacity 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, 2500);
+        }
+    </script>
+</body>
+</html>
