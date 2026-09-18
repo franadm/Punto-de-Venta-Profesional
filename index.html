@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Punto de Venta Profesional - Opción 1</title>
+    <title>Punto de Venta Profesional</title>
     
     <!-- iOS & Android PWA Fullscreen Meta Tags -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="POS Opción 1">
+    <meta name="apple-mobile-web-app-title" content="POS">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#000000">
 
@@ -108,7 +108,7 @@
                     <i class="fa-solid fa-cash-register"></i>
                 </div>
                 <div>
-                    <h1 id="header-title" class="font-bold text-base leading-tight">Caja (Opción 1)</h1>
+                    <h1 id="header-title" class="font-bold text-base leading-tight">Caja</h1>
                     <p class="text-[11px] text-apple-gray" id="store-subtitle">ARCA • Monotributo C</p>
                 </div>
             </div>
@@ -126,20 +126,35 @@
         </header>
 
         <!-- Main Content Area with Dynamic Views -->
-        <main class="flex-1 overflow-y-auto relative hide-scrollbar pt-4 pb-24" id="main-container">
+        <main class="flex-1 overflow-y-auto relative hide-scrollbar pt-4 pb-2" id="main-container">
             
             <!-- VIEW 1: POS / CHECKOUT -->
             <section id="view-pos" class="view-section p-4 space-y-4">
-                <div class="flex space-x-2">
-                    <div class="relative flex-1">
-                        <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3.5 text-apple-gray text-sm"></i>
-                        <input type="text" id="pos-search" oninput="filterPOSProducts()" placeholder="Buscar producto o código..." 
-                            class="w-full bg-apple-card text-white pl-10 pr-4 py-3 rounded-xl border border-apple-border text-sm focus:outline-none focus:border-apple-blue">
+                <div id="pos-search-wrap" class="relative">
+                    <div class="flex space-x-2">
+                        <div class="relative flex-1">
+                            <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3.5 text-apple-gray text-sm"></i>
+                            <input type="text" id="pos-search" oninput="filterPOSProducts()" onfocus="showPOSSearchResults()" placeholder="Buscar producto o código..." 
+                                class="w-full bg-apple-card text-white pl-10 pr-4 py-3 rounded-xl border border-apple-border text-sm focus:outline-none focus:border-apple-blue">
+                        </div>
+                        <button onclick="openQuickVariableModal()" class="bg-apple-card border border-apple-orange/50 px-4 rounded-xl text-apple-orange flex items-center justify-center active:scale-95 transition space-x-1.5" title="Ítem Variable Rápido">
+                            <i class="fa-solid fa-bolt"></i>
+                            <span class="text-xs font-semibold hidden sm:inline">Rápido</span>
+                        </button>
                     </div>
-                    <button onclick="openQuickVariableModal()" class="bg-apple-card border border-apple-orange/50 px-4 rounded-xl text-apple-orange flex items-center justify-center active:scale-95 transition space-x-1.5" title="Ítem Variable Rápido">
-                        <i class="fa-solid fa-bolt"></i>
-                        <span class="text-xs font-semibold hidden sm:inline">Rápido</span>
-                    </button>
+
+                    <!-- Categories -->
+                    <div class="flex space-x-2 overflow-x-auto hide-scrollbar pb-1 pt-3" id="pos-categories">
+                        <button onclick="selectCategory('Todos')" class="cat-pill px-4 py-1.5 rounded-full text-xs font-medium bg-apple-blue text-white whitespace-nowrap transition">Todos</button>
+                        <button onclick="selectCategory('Bebidas')" class="cat-pill px-4 py-1.5 rounded-full text-xs font-medium bg-apple-card text-apple-gray border border-apple-border whitespace-nowrap transition">Bebidas</button>
+                        <button onclick="selectCategory('Almacén')" class="cat-pill px-4 py-1.5 rounded-full text-xs font-medium bg-apple-card text-apple-gray border border-apple-border whitespace-nowrap transition">Almacén</button>
+                        <button onclick="selectCategory('Limpieza')" class="cat-pill px-4 py-1.5 rounded-full text-xs font-medium bg-apple-card text-apple-gray border border-apple-border whitespace-nowrap transition">Limpieza</button>
+                        <button onclick="selectCategory('Snacks')" class="cat-pill px-4 py-1.5 rounded-full text-xs font-medium bg-apple-card text-apple-gray border border-apple-border whitespace-nowrap transition">Snacks</button>
+                        <button onclick="selectCategory('Peso / Varios')" class="cat-pill px-4 py-1.5 rounded-full text-xs font-medium bg-apple-card text-apple-gray border border-apple-border whitespace-nowrap transition">Peso / Varios</button>
+                    </div>
+
+                    <!-- Dropdown de resultados del buscador (catálogo vive acá, no en la pantalla principal) -->
+                    <div id="pos-search-results" class="hidden absolute left-0 right-0 top-full mt-1 bg-apple-card border border-apple-border rounded-2xl shadow-2xl z-40 max-h-[50vh] overflow-y-auto p-2"></div>
                 </div>
 
                 <!-- NEW: Quick $1 Weight/Amount Direct Bar (Panadería, Verdulería, Carnicería) -->
@@ -167,34 +182,22 @@
                     </div>
                 </div>
 
-                <!-- Categories -->
-                <div class="flex space-x-2 overflow-x-auto hide-scrollbar pb-1" id="pos-categories">
-                    <button onclick="selectCategory('Todos')" class="cat-pill px-4 py-1.5 rounded-full text-xs font-medium bg-apple-blue text-white whitespace-nowrap transition">Todos</button>
-                    <button onclick="selectCategory('Bebidas')" class="cat-pill px-4 py-1.5 rounded-full text-xs font-medium bg-apple-card text-apple-gray border border-apple-border whitespace-nowrap transition">Bebidas</button>
-                    <button onclick="selectCategory('Almacén')" class="cat-pill px-4 py-1.5 rounded-full text-xs font-medium bg-apple-card text-apple-gray border border-apple-border whitespace-nowrap transition">Almacén</button>
-                    <button onclick="selectCategory('Limpieza')" class="cat-pill px-4 py-1.5 rounded-full text-xs font-medium bg-apple-card text-apple-gray border border-apple-border whitespace-nowrap transition">Limpieza</button>
-                    <button onclick="selectCategory('Snacks')" class="cat-pill px-4 py-1.5 rounded-full text-xs font-medium bg-apple-card text-apple-gray border border-apple-border whitespace-nowrap transition">Snacks</button>
-                    <button onclick="selectCategory('Peso / Varios')" class="cat-pill px-4 py-1.5 rounded-full text-xs font-medium bg-apple-card text-apple-gray border border-apple-border whitespace-nowrap transition">Peso / Varios</button>
+                <!-- Carrito del Cliente: ahora es el contenido principal de la vista -->
+                <div class="flex justify-between items-center">
+                    <div class="flex items-center space-x-2">
+                        <div class="w-7 h-7 rounded-full bg-apple-blue/20 text-apple-blue flex items-center justify-center text-xs font-bold" id="cart-badge">0</div>
+                        <span class="text-sm font-semibold">Carrito del Cliente</span>
+                    </div>
+                    <span class="text-xs text-apple-gray" id="cart-items-count">0 ítems</span>
                 </div>
 
-                <!-- Product Grid -->
-                <div class="grid grid-cols-2 gap-3" id="pos-product-grid"></div>
+                <div id="cart-items-list" class="space-y-2 text-xs divide-y divide-apple-border/40 pb-2">
+                    <p class="text-apple-gray text-center py-10">El carrito está vacío. Buscá un producto para empezar a cargar.</p>
+                </div>
 
-                <!-- Floating Cart / Checkout Drawer Trigger -->
-                <div id="cart-drawer-summary" class="bg-apple-card/95 backdrop-blur-md border border-apple-border rounded-2xl p-4 shadow-2xl transition-all my-4">
+                <!-- Total + Acciones (fijo al fondo) -->
+                <div id="cart-drawer-summary" class="sticky bottom-0 bg-apple-card/95 backdrop-blur-md border border-apple-border rounded-2xl p-4 shadow-2xl transition-all mt-4 z-30">
                     <div class="flex justify-between items-center mb-3">
-                        <div class="flex items-center space-x-2">
-                            <div class="w-7 h-7 rounded-full bg-apple-blue/20 text-apple-blue flex items-center justify-center text-xs font-bold" id="cart-badge">0</div>
-                            <span class="text-sm font-semibold">Carrito Actual</span>
-                        </div>
-                        <span class="text-xs text-apple-gray" id="cart-items-count">0 ítems</span>
-                    </div>
-                    
-                    <div id="cart-items-list" class="max-h-32 overflow-y-auto space-y-2 mb-3 pr-1 text-xs divide-y divide-apple-border/40">
-                        <p class="text-apple-gray text-center py-2">El carrito está vacío</p>
-                    </div>
-
-                    <div class="flex justify-between items-center pt-2 border-t border-apple-border mb-3">
                         <span class="text-sm text-apple-gray">Total a Pagar:</span>
                         <span class="text-lg font-bold text-apple-green" id="cart-total-display">$0.00</span>
                     </div>
@@ -442,7 +445,7 @@
                     <span id="chk-subtotal">$0.00</span>
                 </div>
                 <div class="flex justify-between text-sm">
-                    <span class="text-apple-gray">IVA (Simulado ARCA):</span>
+                    <span class="text-apple-gray">IVA contenido (no discriminado):</span>
                     <span id="chk-iva">$0.00</span>
                 </div>
                 <div class="flex justify-between text-base font-bold pt-2 border-t border-apple-border">
@@ -527,7 +530,7 @@
             </div>
 
             <div class="text-center space-y-0.5 py-1 border-b pb-3">
-                <p class="text-xs font-bold uppercase" id="ticket-type">FACTURA TIPO C (Opción 1)</p>
+                <p class="text-xs font-bold uppercase" id="ticket-type">FACTURA TIPO C</p>
                 <p class="text-[11px] text-gray-600">Punto de Venta: <span id="ticket-ptovta">0004</span> | Comp. Nro: <span id="ticket-nro">00001234</span></p>
                 <p class="text-[11px] text-gray-600">Fecha: <span id="ticket-fecha">18/09/2026</span></p>
             </div>
@@ -540,7 +543,7 @@
                     <span id="ticket-subtotal">$0.00</span>
                 </div>
                 <div class="flex justify-between">
-                    <span class="text-gray-600">IVA / Impuestos:</span>
+                    <span class="text-gray-600">IVA contenido (no discrim.):</span>
                     <span id="ticket-iva">$0.00</span>
                 </div>
                 <div class="flex justify-between font-bold text-sm pt-1 border-t">
@@ -608,6 +611,7 @@
                         <option value="Almacén">Almacén</option>
                         <option value="Limpieza">Limpieza</option>
                         <option value="Snacks">Snacks</option>
+                        <option value="Peso / Varios">Peso / Varios</option>
                         <option value="Otros">Otros</option>
                     </select>
                 </div>
@@ -870,16 +874,40 @@
                 }
             });
             renderPOSProducts();
+            showPOSSearchResults();
         }
 
         function filterPOSProducts() {
             renderPOSProducts();
+            showPOSSearchResults();
         }
+
+        // Muestra el desplegable de resultados debajo del buscador (así no lo tapa el teclado)
+        function showPOSSearchResults() {
+            renderPOSProducts();
+            const results = document.getElementById('pos-search-results');
+            if (results) results.classList.remove('hidden');
+        }
+
+        function hidePOSSearchResults() {
+            const results = document.getElementById('pos-search-results');
+            if (results) results.classList.add('hidden');
+        }
+
+        // Cierra el desplegable al tocar fuera del buscador/categorías (pero no al tocar dentro)
+        document.addEventListener('click', function(e) {
+            const wrap = document.getElementById('pos-search-wrap');
+            const results = document.getElementById('pos-search-results');
+            if (!wrap || !results || results.classList.contains('hidden')) return;
+            if (!wrap.contains(e.target)) {
+                hidePOSSearchResults();
+            }
+        });
 
         function renderPOSProducts() {
             const searchInput = document.getElementById('pos-search');
             const query = searchInput ? searchInput.value.toLowerCase() : '';
-            const grid = document.getElementById('pos-product-grid');
+            const grid = document.getElementById('pos-search-results');
             if (!grid) return;
             grid.innerHTML = '';
 
@@ -890,18 +918,20 @@
             });
 
             if (filtered.length === 0) {
-                grid.innerHTML = `<div class="col-span-2 text-center py-10 text-apple-gray text-xs">No se encontraron productos</div>`;
+                grid.innerHTML = `<div class="text-center py-8 text-apple-gray text-xs">No se encontraron productos</div>`;
                 return;
             }
 
+            const list = document.createElement('div');
+            list.className = "grid grid-cols-2 gap-2";
             filtered.forEach(p => {
                 const div = document.createElement('div');
-                div.className = "bg-apple-card border border-apple-border p-3.5 rounded-2xl flex flex-col justify-between active:scale-95 transition cursor-pointer";
-                div.onclick = () => addToCart(p.id);
+                div.className = "bg-apple-cardAlt border border-apple-border p-3 rounded-xl flex flex-col justify-between active:scale-95 transition cursor-pointer";
+                div.onclick = () => addToCartFromSearch(p.id);
                 div.innerHTML = `
                     <div>
                         <div class="flex justify-between items-start mb-1">
-                            <span class="text-[10px] px-2 py-0.5 bg-apple-cardAlt rounded-md text-apple-gray">${p.category}</span>
+                            <span class="text-[10px] px-2 py-0.5 bg-apple-card rounded-md text-apple-gray">${p.category}</span>
                             <span class="text-[10px] ${p.stock > 5 ? 'text-apple-green' : 'text-apple-orange font-bold'}">Stock: ${p.stock}</span>
                         </div>
                         <h4 class="font-semibold text-sm line-clamp-2 mt-1">${p.name}</h4>
@@ -913,8 +943,9 @@
                         </div>
                     </div>
                 `;
-                grid.appendChild(div);
+                list.appendChild(div);
             });
+            grid.appendChild(list);
         }
 
         function addToCart(productId) {
@@ -939,6 +970,17 @@
             updateCartUI();
         }
 
+        // Agregar desde el desplegable de búsqueda: suma al carrito y cierra el buscador/teclado
+        function addToCartFromSearch(productId) {
+            addToCart(productId);
+            const searchInput = document.getElementById('pos-search');
+            if (searchInput) {
+                searchInput.value = '';
+                searchInput.blur();
+            }
+            hidePOSSearchResults();
+        }
+
         function updateCartUI() {
             const list = document.getElementById('cart-items-list');
             const badge = document.getElementById('cart-badge');
@@ -954,14 +996,14 @@
 
             if (!list) return;
             if (cart.length === 0) {
-                list.innerHTML = `<p class="text-apple-gray text-center py-2">El carrito está vacío</p>`;
+                list.innerHTML = `<p class="text-apple-gray text-center py-10">El carrito está vacío. Buscá un producto para empezar a cargar.</p>`;
                 return;
             }
 
             list.innerHTML = '';
             cart.forEach((item, index) => {
                 const row = document.createElement('div');
-                row.className = "flex justify-between items-center py-1.5";
+                row.className = "flex justify-between items-center py-2.5";
                 row.innerHTML = `
                     <div class="flex-1 pr-2">
                         <p class="font-medium truncate">${item.name} ${item.isVariable ? '<span class="text-[9px] text-apple-orange bg-apple-orange/10 px-1.5 py-0.5 rounded">Rápido</span>' : ''}</p>
@@ -1112,6 +1154,7 @@
             const compNro = Math.floor(10000000 + Math.random() * 90000000);
             const cae = Math.floor(70000000000000 + Math.random() * 9000000000000);
             const nowFormatted = new Date().toLocaleString();
+            const nowTimestamp = Date.now();
 
             cart.forEach(cartItem => {
                 if (!cartItem.isVariable) {
@@ -1135,6 +1178,7 @@
             const saleRecord = {
                 id: 'V-' + Date.now(),
                 date: nowFormatted,
+                timestamp: nowTimestamp,
                 items: [...cart],
                 subtotal,
                 iva,
@@ -1390,11 +1434,19 @@
             if (!list) return;
             list.innerHTML = '';
 
-            const dailyTotal = salesHistory.reduce((sum, s) => sum + s.total, 0);
+            const today = new Date();
+            const todaysSales = salesHistory.filter(s => {
+                if (!s.timestamp) return false; // ventas antiguas sin timestamp no se cuentan como "de hoy"
+                const d = new Date(s.timestamp);
+                return d.getFullYear() === today.getFullYear() &&
+                       d.getMonth() === today.getMonth() &&
+                       d.getDate() === today.getDate();
+            });
+            const dailyTotal = todaysSales.reduce((sum, s) => sum + s.total, 0);
             const dailyTotEl = document.getElementById('stats-daily-total');
             const dailyCntEl = document.getElementById('stats-daily-count');
             if (dailyTotEl) dailyTotEl.innerText = `$${dailyTotal.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
-            if (dailyCntEl) dailyCntEl.innerText = salesHistory.length;
+            if (dailyCntEl) dailyCntEl.innerText = todaysSales.length;
 
             if (salesHistory.length === 0) {
                 list.innerHTML = `<div class="text-center py-10 text-apple-gray text-xs">No hay ventas registradas aún</div>`;
@@ -1621,6 +1673,7 @@
             const paymentSaleRecord = {
                 id: 'V-PAY-' + Date.now(),
                 date: paymentRecord.date,
+                timestamp: Date.now(),
                 items: [{ name: `Pago de Fiado / Cuenta - ${c.name}`, qty: 1, price: amount }],
                 subtotal: amount,
                 iva: 0,
