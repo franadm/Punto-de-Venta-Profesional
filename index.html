@@ -131,28 +131,16 @@
             <!-- VIEW 1: POS / CHECKOUT -->
             <section id="view-pos" class="view-section p-4 space-y-4">
                 <div id="pos-search-wrap" class="relative">
-                    <div class="flex space-x-2">
-                        <div class="relative flex-1">
-                            <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3.5 text-apple-gray text-sm"></i>
-                            <input type="text" id="pos-search" oninput="filterPOSProducts()" onfocus="showPOSSearchResults()" placeholder="Buscar producto o código..." 
-                                class="w-full bg-apple-card text-white pl-10 pr-4 py-3 rounded-xl border border-apple-border text-sm focus:outline-none focus:border-apple-blue">
-                        </div>
-                        <button onclick="openQuickVariableModal()" class="bg-apple-card border border-apple-orange/50 px-4 rounded-xl text-apple-orange flex items-center justify-center active:scale-95 transition space-x-1.5" title="Ítem Variable Rápido">
-                            <i class="fa-solid fa-bolt"></i>
-                            <span class="text-xs font-semibold hidden sm:inline">Rápido</span>
+                    <div class="relative">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3.5 text-apple-gray text-sm"></i>
+                        <input type="text" id="pos-search" oninput="filterPOSProducts()" onfocus="showPOSSearchResults()" placeholder="Buscar producto o código..." 
+                            class="w-full bg-apple-card text-white pl-10 pr-9 py-3 rounded-xl border border-apple-border text-sm focus:outline-none focus:border-apple-blue">
+                        <button type="button" onclick="clearPOSSearch()" id="pos-search-clear" class="hidden absolute right-3 top-3 text-apple-gray w-5 h-5 flex items-center justify-center">
+                            <i class="fa-solid fa-circle-xmark"></i>
                         </button>
                     </div>
 
-                    <!-- Categories -->
-                    <div class="flex space-x-2 overflow-x-auto hide-scrollbar pb-1 pt-3" id="pos-categories">
-                        <button onclick="selectCategory('Todos')" class="cat-pill px-4 py-1.5 rounded-full text-xs font-medium bg-apple-blue text-white whitespace-nowrap transition">Todos</button>
-                        <button onclick="selectCategory('Bebidas')" class="cat-pill px-4 py-1.5 rounded-full text-xs font-medium bg-apple-card text-apple-gray border border-apple-border whitespace-nowrap transition">Bebidas</button>
-                        <button onclick="selectCategory('Almacén')" class="cat-pill px-4 py-1.5 rounded-full text-xs font-medium bg-apple-card text-apple-gray border border-apple-border whitespace-nowrap transition">Almacén</button>
-                        <button onclick="selectCategory('Limpieza')" class="cat-pill px-4 py-1.5 rounded-full text-xs font-medium bg-apple-card text-apple-gray border border-apple-border whitespace-nowrap transition">Limpieza</button>
-                        <button onclick="selectCategory('Snacks')" class="cat-pill px-4 py-1.5 rounded-full text-xs font-medium bg-apple-card text-apple-gray border border-apple-border whitespace-nowrap transition">Snacks</button>
-                        <button onclick="selectCategory('Peso / Varios')" class="cat-pill px-4 py-1.5 rounded-full text-xs font-medium bg-apple-card text-apple-gray border border-apple-border whitespace-nowrap transition">Peso / Varios</button>
-                    </div>
-
+                
                     <!-- Dropdown de resultados del buscador (catálogo vive acá, no en la pantalla principal) -->
                     <div id="pos-search-results" class="hidden absolute left-0 right-0 top-full mt-1 bg-apple-card border border-apple-border rounded-2xl shadow-2xl z-40 max-h-[50vh] overflow-y-auto p-2"></div>
                 </div>
@@ -721,11 +709,19 @@
         };
 
         let cart = [];
-        let activeCategory = 'Todos';
         let selectedPaymentMethod = 'Efectivo';
         let fiadoMode = 'select';
         let html5QrCode = null;
         let lastGeneratedTicket = null;
+
+        // Formato de moneda consistente en pesos argentinos (punto de miles, coma decimal),
+        // sin depender del idioma configurado en el celular del cajero.
+        function money(amount, forceDecimals) {
+            const n = Number(amount) || 0;
+            return n.toLocaleString('es-AR', forceDecimals
+                ? { minimumFractionDigits: 2, maximumFractionDigits: 2 }
+                : {});
+        }
 
         // Initialize App on load
         window.onload = function() {
@@ -833,7 +829,7 @@
 
             updateCartUI();
             closeQuickVariableModal();
-            showToast(`Agregado al carrito: ${name} ($${finalPrice.toLocaleString()})`);
+            showToast(`Agregado al carrito: ${name} ($${money(finalPrice)})`);
         }
 
         // Tab Navigation
@@ -864,21 +860,18 @@
         }
 
         // --- POS CHECKOUT LOGIC ---
-        function selectCategory(cat) {
-            activeCategory = cat;
-            document.querySelectorAll('.cat-pill').forEach(btn => {
-                if(btn.innerText === cat) {
-                    btn.className = "cat-pill px-4 py-1.5 rounded-full text-xs font-medium bg-apple-blue text-white whitespace-nowrap transition";
-                } else {
-                    btn.className = "cat-pill px-4 py-1.5 rounded-full text-xs font-medium bg-apple-card text-apple-gray border border-apple-border whitespace-nowrap transition";
-                }
-            });
-            renderPOSProducts();
+        function filterPOSProducts() {
+            const input = document.getElementById('pos-search');
+            const clearBtn = document.getElementById('pos-search-clear');
+            if (clearBtn) clearBtn.classList.toggle('hidden', !(input && input.value));
             showPOSSearchResults();
         }
 
-        function filterPOSProducts() {
-            renderPOSProducts();
+        function clearPOSSearch() {
+            const input = document.getElementById('pos-search');
+            if (input) { input.value = ''; input.focus(); }
+            const clearBtn = document.getElementById('pos-search-clear');
+            if (clearBtn) clearBtn.classList.add('hidden');
             showPOSSearchResults();
         }
 
@@ -912,9 +905,7 @@
             grid.innerHTML = '';
 
             const filtered = products.filter(p => {
-                const matchCat = activeCategory === 'Todos' || p.category === activeCategory;
-                const matchQuery = p.name.toLowerCase().includes(query) || p.barcode.includes(query);
-                return matchCat && matchQuery;
+                return p.name.toLowerCase().includes(query) || p.barcode.includes(query);
             });
 
             if (filtered.length === 0) {
@@ -923,22 +914,22 @@
             }
 
             const list = document.createElement('div');
-            list.className = "grid grid-cols-2 gap-2";
+            list.className = "divide-y divide-apple-border/50";
             filtered.forEach(p => {
                 const div = document.createElement('div');
-                div.className = "bg-apple-cardAlt border border-apple-border p-3 rounded-xl flex flex-col justify-between active:scale-95 transition cursor-pointer";
+                div.className = "flex items-center justify-between py-2.5 px-1 active:bg-apple-cardAlt/60 transition cursor-pointer";
                 div.onclick = () => addToCartFromSearch(p.id);
                 div.innerHTML = `
-                    <div>
-                        <div class="flex justify-between items-start mb-1">
-                            <span class="text-[10px] px-2 py-0.5 bg-apple-card rounded-md text-apple-gray">${p.category}</span>
-                            <span class="text-[10px] ${p.stock > 5 ? 'text-apple-green' : 'text-apple-orange font-bold'}">Stock: ${p.stock}</span>
-                        </div>
-                        <h4 class="font-semibold text-sm line-clamp-2 mt-1">${p.name}</h4>
+                    <div class="flex-1 min-w-0 pr-2">
+                        <h4 class="font-semibold text-sm truncate">${p.name}</h4>
+                        <p class="text-[10px] text-apple-gray">
+                            <span class="px-1.5 py-0.5 bg-apple-cardAlt rounded-md">${p.category}</span>
+                            <span class="ml-1 ${p.stock > 5 ? 'text-apple-gray' : 'text-apple-orange font-bold'}">Stock: ${p.stock}</span>
+                        </p>
                     </div>
-                    <div class="flex justify-between items-center mt-3 pt-2 border-t border-apple-border/60">
-                        <span class="text-sm font-bold text-apple-green">$${p.price.toLocaleString()}</span>
-                        <div class="w-7 h-7 rounded-full bg-apple-blue/20 text-apple-blue flex items-center justify-center text-xs">
+                    <div class="flex items-center space-x-2 shrink-0">
+                        <span class="text-sm font-bold text-apple-green">$${money(p.price)}</span>
+                        <div class="w-7 h-7 rounded-full bg-apple-blue/20 text-apple-blue flex items-center justify-center text-xs shrink-0">
                             <i class="fa-solid fa-plus"></i>
                         </div>
                     </div>
@@ -972,13 +963,19 @@
 
         // Agregar desde el desplegable de búsqueda: suma al carrito y cierra el buscador/teclado
         function addToCartFromSearch(productId) {
+            const product = products.find(p => p.id === productId);
             addToCart(productId);
             const searchInput = document.getElementById('pos-search');
             if (searchInput) {
                 searchInput.value = '';
                 searchInput.blur();
             }
+            const clearBtn = document.getElementById('pos-search-clear');
+            if (clearBtn) clearBtn.classList.add('hidden');
             hidePOSSearchResults();
+            if (product && product.stock > 0) {
+                showToast(`Agregado al carrito: ${product.name}`);
+            }
         }
 
         function updateCartUI() {
@@ -992,7 +989,7 @@
 
             if (badge) badge.innerText = totalItems;
             if (countLabel) countLabel.innerText = `${totalItems} ítem${totalItems === 1 ? '' : 's'}`;
-            if (totalDisplay) totalDisplay.innerText = `$${totalPrice.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            if (totalDisplay) totalDisplay.innerText = `$${money(totalPrice, true)}`;
 
             if (!list) return;
             if (cart.length === 0) {
@@ -1007,7 +1004,7 @@
                 row.innerHTML = `
                     <div class="flex-1 pr-2">
                         <p class="font-medium truncate">${item.name} ${item.isVariable ? '<span class="text-[9px] text-apple-orange bg-apple-orange/10 px-1.5 py-0.5 rounded">Rápido</span>' : ''}</p>
-                        <p class="text-[10px] text-apple-gray">$${item.price.toLocaleString()} c/u</p>
+                        <p class="text-[10px] text-apple-gray">$${money(item.price)} c/u</p>
                     </div>
                     <div class="flex items-center space-x-2">
                         <div class="flex items-center space-x-1 bg-apple-cardAlt px-2 py-0.5 rounded-lg border border-apple-border">
@@ -1015,7 +1012,7 @@
                             <span class="font-bold text-xs">${item.qty}</span>
                             <button onclick="updateCartQty(${index}, 1)" class="text-apple-blue px-1">+</button>
                         </div>
-                        <span class="font-semibold text-apple-green w-16 text-right">$${(item.price * item.qty).toLocaleString()}</span>
+                        <span class="font-semibold text-apple-green w-16 text-right">$${money(item.price * item.qty)}</span>
                     </div>
                 `;
                 list.appendChild(row);
@@ -1049,9 +1046,9 @@
             const chkSub = document.getElementById('chk-subtotal');
             const chkIva = document.getElementById('chk-iva');
             const chkTot = document.getElementById('chk-total');
-            if (chkSub) chkSub.innerText = `$${subtotal.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
-            if (chkIva) chkIva.innerText = `$${iva.toLocaleString(undefined, {minimumFractionDigits: 2})} (21%)`;
-            if (chkTot) chkTot.innerText = `$${total.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
+            if (chkSub) chkSub.innerText = `$${money(subtotal, true)}`;
+            if (chkIva) chkIva.innerText = `$${money(iva, true)} (21%)`;
+            if (chkTot) chkTot.innerText = `$${money(total, true)}`;
 
             setPaymentMethod('Efectivo');
 
@@ -1059,7 +1056,7 @@
             if (select) {
                 select.innerHTML = `<option value="">-- Seleccione Cliente --</option>`;
                 customers.forEach(c => {
-                    select.innerHTML += `<option value="${c.id}">${c.name} (Deuda actual: $${c.debt.toLocaleString()})</option>`;
+                    select.innerHTML += `<option value="${c.id}">${c.name} (Deuda actual: $${money(c.debt)})</option>`;
                 });
             }
 
@@ -1153,7 +1150,7 @@
 
             const compNro = Math.floor(10000000 + Math.random() * 90000000);
             const cae = Math.floor(70000000000000 + Math.random() * 9000000000000);
-            const nowFormatted = new Date().toLocaleString();
+            const nowFormatted = new Date().toLocaleString('es-AR');
             const nowTimestamp = Date.now();
 
             cart.forEach(cartItem => {
@@ -1221,9 +1218,9 @@
             if (setPtoVta) setPtoVta.innerText = settings.ptovta;
             if (setNro) setNro.innerText = String(sale.compNro).padStart(8, '0');
             if (setFecha) setFecha.innerText = sale.date;
-            if (setSub) setSub.innerText = `$${sale.subtotal.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
-            if (setIva) setIva.innerText = `$${sale.iva.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
-            if (setTot) setTot.innerText = `$${sale.total.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
+            if (setSub) setSub.innerText = `$${money(sale.subtotal, true)}`;
+            if (setIva) setIva.innerText = `$${money(sale.iva, true)}`;
+            if (setTot) setTot.innerText = `$${money(sale.total, true)}`;
             if (setCae) setCae.innerText = `CAE N°: ${sale.cae}`;
 
             const container = document.getElementById('ticket-items-container');
@@ -1234,7 +1231,7 @@
                     div.className = "flex justify-between items-center py-1";
                     div.innerHTML = `
                         <span>${i.qty}x ${i.name}</span>
-                        <span class="font-medium">$${(i.price * i.qty).toLocaleString()}</span>
+                        <span class="font-medium">$${money(i.price * i.qty)}</span>
                     `;
                     container.appendChild(div);
                 });
@@ -1272,9 +1269,9 @@
             text += `Fecha: ${t.date}\n\n`;
             text += `*DETALLE:*\n`;
             t.items.forEach(i => {
-                text += `• ${i.qty}x ${i.name} ($${(i.price * i.qty).toLocaleString()})\n`;
+                text += `• ${i.qty}x ${i.name} ($${money(i.price * i.qty)})\n`;
             });
-            text += `\n*TOTAL:* $${t.total.toLocaleString()}\n`;
+            text += `\n*TOTAL:* $${money(t.total)}\n`;
             text += `CAE: ${t.cae}\n`;
             text += `_¡Gracias por su compra!_`;
 
@@ -1308,7 +1305,7 @@
                         </div>
                         <h4 class="font-semibold text-sm">${p.name}</h4>
                         <div class="flex space-x-3 text-xs">
-                            <span class="text-apple-green font-bold">$${p.price.toLocaleString()}</span>
+                            <span class="text-apple-green font-bold">$${money(p.price)}</span>
                             <span class="${p.stock > 5 ? 'text-apple-gray' : 'text-apple-orange font-bold'}">Stock: ${p.stock} un.</span>
                         </div>
                     </div>
@@ -1390,6 +1387,11 @@
                 return;
             }
 
+            if (price < 0 || stock < 0) {
+                showToast('El precio y el stock no pueden ser negativos', 'error');
+                return;
+            }
+
             if (id) {
                 const p = products.find(prod => prod.id === id);
                 if (p) {
@@ -1445,7 +1447,7 @@
             const dailyTotal = todaysSales.reduce((sum, s) => sum + s.total, 0);
             const dailyTotEl = document.getElementById('stats-daily-total');
             const dailyCntEl = document.getElementById('stats-daily-count');
-            if (dailyTotEl) dailyTotEl.innerText = `$${dailyTotal.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
+            if (dailyTotEl) dailyTotEl.innerText = `$${money(dailyTotal, true)}`;
             if (dailyCntEl) dailyCntEl.innerText = todaysSales.length;
 
             if (salesHistory.length === 0) {
@@ -1463,7 +1465,7 @@
                     </div>
                     <div class="flex justify-between items-center">
                         <div>
-                            <p class="font-bold text-sm text-apple-green">$${sale.total.toLocaleString()}</p>
+                            <p class="font-bold text-sm text-apple-green">$${money(sale.total)}</p>
                             <p class="text-[10px] text-apple-gray">${sale.paymentMethod} • ${sale.items.length} ítems</p>
                         </div>
                         <button onclick="reprintTicket('${sale.id}')" class="bg-apple-cardAlt border border-apple-border px-3 py-1.5 rounded-xl text-xs font-semibold text-white active:scale-95 transition">
@@ -1510,7 +1512,7 @@
 
             const totalDebt = customers.reduce((sum, c) => sum + c.debt, 0);
             const totalDebtEl = document.getElementById('total-debt-display');
-            if (totalDebtEl) totalDebtEl.innerText = `$${totalDebt.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
+            if (totalDebtEl) totalDebtEl.innerText = `$${money(totalDebt, true)}`;
 
             const filteredCustomers = customers.filter(c => c.name.toLowerCase().includes(query) || c.phone.includes(query));
 
@@ -1531,10 +1533,10 @@
                             <div class="bg-apple-cardAlt p-2.5 rounded-xl border border-apple-border/40 text-xs space-y-1">
                                 <div class="flex justify-between text-[10px] text-apple-gray">
                                     <span><i class="fa-regular fa-clock mr-1"></i>${p.date}</span>
-                                    <span class="font-bold text-apple-orange">Fiado: $${p.total.toLocaleString()}</span>
+                                    <span class="font-bold text-apple-orange">Fiado: $${money(p.total)}</span>
                                 </div>
                                 <div class="space-y-0.5">
-                                    ${p.items.map(i => `<div class="flex justify-between text-white text-[11px]"><span>• ${i.qty}x ${i.name}</span><span class="text-apple-gray">$${(i.price * i.qty).toLocaleString()}</span></div>`).join('')}
+                                    ${p.items.map(i => `<div class="flex justify-between text-white text-[11px]"><span>• ${i.qty}x ${i.name}</span><span class="text-apple-gray">$${money(i.price * i.qty)}</span></div>`).join('')}
                                 </div>
                             </div>
                         `;
@@ -1549,7 +1551,7 @@
                         paymentsHTML += `
                             <div class="bg-apple-green/10 p-2 rounded-xl border border-apple-green/20 text-xs flex justify-between items-center">
                                 <span class="text-[10px] text-apple-gray"><i class="fa-regular fa-clock mr-1"></i>${pay.date}</span>
-                                <span class="font-bold text-apple-green">+ Abono: $${pay.amount.toLocaleString()}</span>
+                                <span class="font-bold text-apple-green">+ Abono: $${money(pay.amount)}</span>
                             </div>
                         `;
                     });
@@ -1561,7 +1563,7 @@
                         <div class="space-y-1">
                             <h4 class="font-semibold text-sm">${c.name}</h4>
                             <p class="text-xs text-apple-gray"><i class="fa-solid fa-phone mr-1"></i> ${c.phone}</p>
-                            <p class="text-xs font-bold text-apple-orange mt-1">Deuda Pendiente: $${c.debt.toLocaleString()}</p>
+                            <p class="text-xs font-bold text-apple-orange mt-1">Deuda Pendiente: $${money(c.debt)}</p>
                         </div>
                         <div class="flex flex-col space-y-2">
                             <button onclick="payDebt('${c.id}')" class="bg-apple-green/20 text-apple-green border border-apple-green/30 px-3 py-1.5 rounded-xl text-xs font-semibold active:scale-95 transition">
@@ -1630,7 +1632,7 @@
 
             if (idInput) idInput.value = c.id;
             if (nameEl) nameEl.innerText = c.name;
-            if (totalEl) totalEl.innerText = `$${c.debt.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
+            if (totalEl) totalEl.innerText = `$${money(c.debt, true)}`;
             if (amountInput) amountInput.value = c.debt;
 
             if (modal) modal.classList.remove('hidden');
@@ -1663,7 +1665,7 @@
             if (!c.payments) c.payments = [];
             
             const paymentRecord = {
-                date: new Date().toLocaleString(),
+                date: new Date().toLocaleString('es-AR'),
                 amount: amount
             };
             c.payments.unshift(paymentRecord);
@@ -1689,7 +1691,7 @@
                 customers = customers.filter(cust => cust.id !== customerId);
                 showToast(`¡Deuda saldada por completo! Cliente dado de alta.`);
             } else {
-                showToast(`Abono registrado con éxito: $${amount.toLocaleString()}`);
+                showToast(`Abono registrado con éxito: $${money(amount)}`);
             }
 
             persistData();
@@ -1701,7 +1703,7 @@
         function remindWhatsApp(id) {
             const c = customers.find(cust => cust.id === id);
             if (!c) return;
-            const text = `Hola ${c.name}! Te escribimos de ${settings.razon} para recordarte que tenés un saldo pendiente en tu cuenta corriente por un total de *$${c.debt.toLocaleString()}*. ¡Gracias!`;
+            const text = `Hola ${c.name}! Te escribimos de ${settings.razon} para recordarte que tenés un saldo pendiente en tu cuenta corriente por un total de *$${money(c.debt)}*. ¡Gracias!`;
             window.open(`https://api.whatsapp.com/send?phone=${c.phone}&text=${encodeURIComponent(text)}`, '_blank');
         }
 
