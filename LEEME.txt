@@ -1,0 +1,41 @@
+SISTEMA DE VENTAS - App web instalable (PWA) para iPhone
+=========================================================
+
+CONTENIDO
+  index.html     La app completa
+  manifest.json  Datos de instalación (nombre, íconos, modo pantalla completa)
+  sw.js          Permite abrir la app al instante y usarla SIN internet
+  icons/         Íconos de la app
+
+PASO 1 - SUBIRLA A INTERNET (una sola vez, gratis)
+  iPhone solo instala apps web desde una dirección https://. Opciones gratuitas:
+  - Netlify Drop: entrá a app.netlify.com/drop y arrastrá esta carpeta descomprimida.
+  - Vercel / GitHub Pages / Cloudflare Pages: subí estos mismos archivos.
+  (No funciona abriendo el archivo suelto desde "Archivos": necesita una URL https.)
+
+PASO 2 - INSTALARLA EN CADA iPHONE
+  1. Abrí la dirección en SAFARI (no en Chrome ni dentro de WhatsApp).
+  2. Tocá el botón Compartir (cuadrado con flecha hacia arriba).
+  3. Elegí "Añadir a pantalla de inicio" y tocá "Añadir".
+  4. Abrila desde el ícono nuevo. Ya funciona sin conexión.
+
+IMPORTANTE - TUS DATOS
+  - Los datos se guardan en la base interna del iPhone (IndexedDB): soporta decenas de miles de ventas.
+    En Configuración > Datos ves cuánto espacio usa.
+  - Los datos viven SOLO en el iPhone donde se usa. No se comparten entre celulares.
+  - La app instalada y Safari NO comparten datos. Si ya cargaste cosas en Safari con la
+    versión anterior, exportá el backup desde allá (Configuración > Exportar) e importalo
+    en la app instalada (Configuración > Importar). El backup viejo también se acepta.
+  - Hacé un backup seguido (la app te avisa con un punto naranja en el engranaje).
+  - Si borrás la app del iPhone se borran los datos: guardá el backup en Archivos/iCloud.
+
+USO SIN INTERNET
+  - Abrí la app UNA VEZ con internet, desde el ícono instalado, y esperá el aviso
+    "Lista para usar sin internet". También lo ves en Configuración > Modo sin internet.
+  - Desde ahí abre y funciona completa sin conexión (ventas, stock, fiados, historial, reportes,
+    impresión y backup). Arriba aparece "Sin conexión" como recordatorio.
+  - Lo único que necesita internet es el envío por WhatsApp (el mensaje sale cuando vuelve la señal).
+
+ACTUALIZAR LA APP
+  Subí los archivos nuevos y cambiá el número de versión en sw.js (const CACHE = 'sv-v2.1.1'). Con internet, la app
+  se actualiza sola; cerrala y abrila para ver la versión nueva.
